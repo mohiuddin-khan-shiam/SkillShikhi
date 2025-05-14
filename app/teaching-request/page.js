@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import '../styles.css';
 import NotificationsPanel from '../components/NotificationsPanel';
 import Cookies from 'js-cookie';
 
-export default function TeachingRequestPage() {
+// Wrapper component that uses searchParams
+function TeachingRequestContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     
