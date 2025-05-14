@@ -1,0 +1,9 @@
+/* app/globals.css for Tailwind v4 */
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+
+/* You can add custom styles below */
+body {
+  font-family: system-ui, sans-serif;
+  background-color: #f8fafc;
+}

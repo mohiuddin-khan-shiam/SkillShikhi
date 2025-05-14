@@ -1,0 +1,283 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import ClientOnly from '../../../components/ClientOnly';
+
+// Import components
+const ReportsTab = dynamic(() => import('../../../components/admin/ReportsTab'), { ssr: false });
+const UsersTab = dynamic(() => import('../../../components/admin/UsersTab'), { ssr: false });
+const BannedUsersTab = dynamic(() => import('../../../components/admin/BannedUsersTab'), { ssr: false });
+const ContentTab = dynamic(() => import('../../../components/admin/ContentTab'), { ssr: false });
+const SessionsTab = dynamic(() => import('../../../components/admin/SessionsTab'), { ssr: false });
+const LogsTab = dynamic(() => import('../../../components/admin/LogsTab'), { ssr: false });
+const AnalyticsTab = dynamic(() => import('../../../components/admin/AnalyticsTab'), { ssr: false });
+const AdminDashboardTracker = dynamic(() => import('../../../components/admin/AdminDashboardTracker'), { ssr: false });
+
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState('reports');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+        
+        if (!token) {
+          router.push('/admin/login');
+          return;
+        }
+        
+        const response = await fetch('/api/admin/login', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          setIsAdmin(true);
+        } else {
+          router.push('/admin/login');
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        router.push('/admin/login');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAdmin();
+  }, [router]);
+  
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    router.push('/admin/login');
+  };
+  
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <p>Loading admin dashboard...</p>
+      </div>
+    );
+  }
+  
+  // Show unauthorized message if not admin
+  if (!isAdmin) {
+    return (
+      <div className="error-container">
+        <h2>Unauthorized</h2>
+        <p>You do not have permission to access this page.</p>
+        <button onClick={() => router.push('/admin/login')} className="retry-button">
+          Go to Login
+        </button>
+      </div>
+    );
+  }
+  
+  // Main dashboard render
+  return (
+    <div className="admin-dashboard">
+      <ClientOnly>
+        <AdminDashboardTracker />
+      </ClientOnly>
+      <div className="admin-header">
+        <h1>Admin Dashboard</h1>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
+      </div>
+      
+      <div className="tabs">
+        <button 
+          className={`tab-button ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Reports
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          Users
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'banned' ? 'active' : ''}`}
+          onClick={() => setActiveTab('banned')}
+        >
+          Banned Users
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'content' ? 'active' : ''}`}
+          onClick={() => setActiveTab('content')}
+        >
+          Content Moderation
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'sessions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sessions')}
+        >
+          Live Sessions
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'logs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('logs')}
+        >
+          Activity Logs
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          Analytics
+        </button>
+      </div>
+      
+      {/* Reports Tab */}
+      {activeTab === 'reports' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <ReportsTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Users Tab */}
+      {activeTab === 'users' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <UsersTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Banned Users Tab */}
+      {activeTab === 'banned' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <BannedUsersTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Content Tab */}
+      {activeTab === 'content' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <ContentTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Sessions Tab */}
+      {activeTab === 'sessions' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <SessionsTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Activity Logs Tab */}
+      {activeTab === 'logs' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <LogsTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <div className="tab-content">
+          <ClientOnly>
+            <AnalyticsTab />
+          </ClientOnly>
+        </div>
+      )}
+      
+      <style jsx>{`
+        .admin-dashboard {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        
+        .admin-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .logout-button {
+          background-color: #ef4444;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        
+        .tabs {
+          display: flex;
+          border-bottom: 1px solid #e5e7eb;
+          margin-bottom: 20px;
+          overflow-x: auto;
+        }
+        
+        .tab-button {
+          padding: 10px 16px;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          cursor: pointer;
+          font-weight: 500;
+          color: #6b7280;
+          white-space: nowrap;
+        }
+        
+        .tab-button.active {
+          border-bottom: 2px solid #3b82f6;
+          color: #3b82f6;
+        }
+        
+        .tab-content {
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+        }
+        
+        .loading-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+        
+        .error-container {
+          text-align: center;
+          padding: 40px;
+        }
+        
+        .retry-button {
+          background-color: #3b82f6;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-top: 16px;
+        }
+      `}</style>
+    </div>
+  );
+}
