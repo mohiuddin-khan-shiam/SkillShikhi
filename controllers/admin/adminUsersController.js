@@ -59,10 +59,26 @@ export async function getUsers(params, adminToken) {
     }
     
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
+      // Check if search is a date format
+      const dateRegex = /^\d{4}-\d{1,2}-\d{1,2}$/;
+      if (dateRegex.test(search)) {
+        // If it's a date format, search by createdAt
+        const searchDate = new Date(search);
+        const nextDay = new Date(searchDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        query.createdAt = {
+          $gte: searchDate,
+          $lt: nextDay
+        };
+      } else {
+        // Regular search by name or email
+        query.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { _id: search.length === 24 ? search : null }
+        ];
+      }
     }
     
     console.log('Query:', JSON.stringify(query));

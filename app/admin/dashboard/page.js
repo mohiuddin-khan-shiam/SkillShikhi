@@ -9,7 +9,6 @@ import '../../../styles/admin.css';
 const ClientOnly = dynamic(() => import('../../../components/ClientOnly'), { ssr: false });
 const ReportsTab = dynamic(() => import('../../../components/admin/ReportsTab'), { ssr: false });
 const UsersTab = dynamic(() => import('../../../components/admin/UsersTab'), { ssr: false });
-const BannedUsersTab = dynamic(() => import('../../../components/admin/BannedUsersTab'), { ssr: false });
 const ContentTab = dynamic(() => import('../../../components/admin/ContentTab'), { ssr: false });
 const SessionsTab = dynamic(() => import('../../../components/admin/SessionsTab'), { ssr: false });
 const LogsTab = dynamic(() => import('../../../components/admin/LogsTab'), { ssr: false });
@@ -127,16 +126,7 @@ export default function AdminDashboard() {
                 setActiveTab('users');
               }}>
                 <span className="nav-icon">👥</span>
-                Users
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'banned' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('banned');
-              }}>
-                <span className="nav-icon">🚫</span>
-                Banned Users
+                User Management
               </a>
             </li>
             <li className={`admin-nav-item ${activeTab === 'content' ? 'active' : ''}`}>
@@ -193,7 +183,7 @@ export default function AdminDashboard() {
             </div>
           )}
           
-          {/* Users Tab */}
+          {/* Users Tab - Combined with Banned Users */}
           {activeTab === 'users' && (
             <div className="admin-card">
               <div className="admin-card-header">
@@ -202,20 +192,6 @@ export default function AdminDashboard() {
               <div className="admin-card-body">
                 <ClientOnly>
                   <UsersTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-          
-          {/* Banned Users Tab */}
-          {activeTab === 'banned' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Banned Users</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <BannedUsersTab />
                 </ClientOnly>
               </div>
             </div>
