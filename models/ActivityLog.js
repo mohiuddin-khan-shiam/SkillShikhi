@@ -26,8 +26,8 @@ const ActivityLogSchema = new mongoose.Schema({
       'session_terminate',
       'content_moderate',
       'admin_dashboard_visit',
-      'VIEW_REPORTS',
-      'VIEW_USERS'
+      'user_view',
+      'report_view'
     ]
   },
   targetId: {

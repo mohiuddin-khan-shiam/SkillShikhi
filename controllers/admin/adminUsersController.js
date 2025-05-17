@@ -120,7 +120,7 @@ export async function getUsers(params, adminToken) {
     
     // Log activity
     try {
-      await logActivity(adminToken, 'VIEW_USERS', null, 'User', { filters: { role, status, search } });
+      await logActivity(adminToken, 'user_view', null, 'User', { filters: { role, status, search } });
     } catch (logError) {
       console.error('Error logging activity:', logError);
       // Continue even if logging fails

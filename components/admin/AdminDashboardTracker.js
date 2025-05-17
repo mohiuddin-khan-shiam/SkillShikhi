@@ -10,15 +10,16 @@ const AdminDashboardTracker = () => {
     // Track admin dashboard visit
     const trackVisit = async () => {
       try {
-        const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+        // Only use adminToken for admin routes
+        const token = localStorage.getItem('adminToken');
         
         if (!token) {
-          console.error('No authentication token found');
+          console.error('No admin authentication token found');
           return;
         }
         
         // Create activity log for admin dashboard visit
-        await fetch('/api/admin/logs', {
+        const logResponse = await fetch('/api/admin/logs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -33,8 +34,13 @@ const AdminDashboardTracker = () => {
           })
         });
         
+        // Check if logging was successful
+        if (!logResponse.ok) {
+          console.warn('Activity logging failed with status ' + logResponse.status + ': ' + logResponse.statusText);
+        }
+        
         // Update analytics for today
-        await fetch('/api/admin/analytics', {
+        const analyticsResponse = await fetch('/api/admin/analytics', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -44,6 +50,11 @@ const AdminDashboardTracker = () => {
             date: new Date().toISOString().split('T')[0]
           })
         });
+        
+        // Check if analytics update was successful
+        if (!analyticsResponse.ok) {
+          console.warn('Analytics update failed with status ' + analyticsResponse.status + ': ' + analyticsResponse.statusText);
+        }
       } catch (error) {
         console.error('Error tracking admin dashboard visit:', error);
       }

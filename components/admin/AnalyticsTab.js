@@ -19,10 +19,10 @@ const AnalyticsTab = () => {
   const fetchAnalytics = async (refresh = false) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken');
       
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error('Admin authentication token not found. Please log in again.');
       }
       
       // Build query params

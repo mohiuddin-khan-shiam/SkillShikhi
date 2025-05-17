@@ -121,7 +121,12 @@ export async function GET(request) {
       .populate('reviewedBy', 'name');
     
     // Log activity
-    await logActivity(token, 'VIEW_REPORTS', null, 'Report', { filters: { status, type, startDate, endDate } });
+    try {
+      await logActivity(token, 'report_view', null, 'User', { filters: { status, type, startDate, endDate } });
+    } catch (logError) {
+      console.error('Activity logging failed:', logError);
+      // Continue even if logging fails
+    }
     
     console.log(`✅ Retrieved ${reports.length} reports`);
     
