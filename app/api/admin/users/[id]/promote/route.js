@@ -1,14 +1,53 @@
+// app/api/admin/users/[id]/promote/route.js
+
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/dbConnect';
-import User from '@/models/User';
-import { verifyAdminToken } from '@/lib/auth';
+import dbConnect from '../../../../../../lib/mongodb';
+import User from '../../../../../../models/User';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Helper function to verify admin token
+async function verifyAdminToken(token) {
+  if (!token) {
+    return null;
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role !== 'admin') {
+      return null;
+    }
+    
+    await dbConnect();
+    const admin = await User.findById(decoded.userId);
+    if (!admin || admin.role !== 'admin') {
+      return null;
+    }
+    
+    return admin;
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return null;
+  }
+}
 
 export async function PATCH(request, { params }) {
   try {
     await dbConnect();
     
     // Verify admin token
-    const token = request.headers.get('authorization')?.split(' ')[1];
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { message: 'Unauthorized: Admin access required' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.split(' ')[1];
     const admin = await verifyAdminToken(token);
     
     if (!admin) {

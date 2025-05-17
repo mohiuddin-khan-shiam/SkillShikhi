@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
-import { FaSearch, FaFilter, FaUserCircle, FaBan, FaUnlock, FaEye } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaUserCircle, FaBan, FaUnlock, FaEye, FaDownload } from 'react-icons/fa';
 
 const UsersTab = () => {
   const [users, setUsers] = useState([]);
@@ -242,33 +242,20 @@ const UsersTab = () => {
   }
   
   return (
-    <div className="users-tab">
-      {/* Filters */}
-      <div className="admin-filters">
+    <div className="users-tab modern-tab">
+      <div className="admin-header-with-actions">
+        <h2>User Management</h2>
+        <div className="header-actions">
+          <button className="admin-button outline-button">
+            <FaDownload className="button-icon" /> Export Users
+          </button>
+        </div>
+      </div>
+      
+      {/* Enhanced Filters */}
+      <div className="admin-filters modern-filters">
         <div className="filter-row">
-          <div className="filter-controls">
-            <select
-              value={filters.role}
-              onChange={(e) => setFilters({...filters, role: e.target.value})}
-              className="filter-select"
-            >
-              <option value="">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({...filters, status: e.target.value})}
-              className="filter-select"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="banned">Banned</option>
-            </select>
-          </div>
-          
-          <div className="filter-group search-group">
+          <div className="filter-group search-group expanded">
             <div className="search-input-container">
               <FaSearch className="search-icon" />
               <input
@@ -278,16 +265,40 @@ const UsersTab = () => {
                 value={filters.search}
                 onChange={handleSearchInput}
                 placeholder="Search by name, email, or ID"
-                className="filter-input"
+                className="filter-input modern-input"
+                autoComplete="off"
               />
             </div>
           </div>
           
-          <div className="filter-actions">
+          <div className="filter-controls">
+            <div className="select-wrapper">
+              <select
+                value={filters.role}
+                onChange={(e) => setFilters({...filters, role: e.target.value})}
+                className="filter-select modern-select"
+              >
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+            <div className="select-wrapper">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({...filters, status: e.target.value})}
+                className="filter-select modern-select"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="banned">Banned</option>
+              </select>
+            </div>
             <button onClick={applyFilters} className="admin-button primary-button">
-              <FaFilter className="button-icon" /> Apply Filters
+              <FaFilter className="button-icon" /> Filter
             </button>
-            <button onClick={resetFilters} className="admin-button secondary-button">
+            <button onClick={resetFilters} className="admin-button text-button">
               Reset
             </button>
           </div>
@@ -300,81 +311,85 @@ const UsersTab = () => {
         </div>
       ) : (
         <div className="admin-data-container">
-          <div className="admin-table-container">
-            <table className="admin-table">
+          <div className="admin-table-container modern-table-container">
+            <table className="admin-table modern-table">
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Joined</th>
-                  <th>Last Login</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th className="user-column">USER</th>
+                  <th>EMAIL</th>
+                  <th className="role-column">ROLE</th>
+                  <th>JOINED</th>
+                  <th>LAST LOGIN</th>
+                  <th>STATUS</th>
+                  <th className="actions-column">ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => (
                   <tr key={user._id} className={user.isBanned ? 'banned-user' : ''}>
                     <td className="user-cell">
-                      {user.profileImage ? (
-                        <img 
-                          src={user.profileImage} 
-                          alt={user.name} 
-                          className="user-avatar-small" 
-                        />
-                      ) : (
-                        <div className="avatar-placeholder">
-                          <FaUserCircle className="avatar-icon" />
-                        </div>
-                      )}
+                      <div className="user-avatar-container">
+                        {user.profileImage ? (
+                          <img 
+                            src={user.profileImage} 
+                            alt={user.name} 
+                            className="user-avatar-small" 
+                          />
+                        ) : (
+                          <div className="avatar-placeholder modern-avatar">
+                            <FaUserCircle className="avatar-icon" />
+                          </div>
+                        )}
+                      </div>
                       <span className="user-name">{user.name}</span>
                     </td>
                     <td className="user-email">{user.email}</td>
                     <td>
-                      <span className={`role-badge ${user.role || 'user'}`}>
+                      <span className={`role-badge modern-badge ${user.role || 'user'}`}>
                         {user.role ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'User'}
                       </span>
                     </td>
                     <td className="date-cell">{formatDate(user.createdAt)}</td>
                     <td className="date-cell">{user.lastLogin ? formatDate(user.lastLogin) : 'Never'}</td>
                     <td>
-                      <span className={`status-badge ${user.isBanned ? 'banned' : user.isActive ? 'active' : 'inactive'}`}>
+                      <span className={`status-badge modern-badge ${user.isBanned ? 'banned' : user.isActive ? 'active' : 'inactive'}`}>
                         {user.isBanned ? 'Banned' : user.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="actions-cell">
-                      <button 
-                        onClick={() => openUserModal(user)} 
-                        className="admin-button view-button small-button"
-                        aria-label="View user details"
-                      >
-                        <FaEye className="button-icon" /> View
-                      </button>
-                      {user.isBanned ? (
-                        <button
-                          onClick={() => handleUserAction(user._id, 'unban')}
-                          className="admin-button success-button small-button"
-                          title="Unban User"
-                          aria-label="Unban user"
+                      <div className="action-buttons-container">
+                        <button 
+                          onClick={() => openUserModal(user)} 
+                          className="admin-button view-button modern-button small-button"
+                          aria-label="View user details"
                         >
-                          <FaUnlock className="button-icon" /> Unban
+                          <FaEye className="button-icon" /> View
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            const reason = prompt(`Enter reason for banning ${user.name}:`);
-                            if (reason) {
-                              handleUserAction(user._id, 'ban', reason);
-                            }
-                          }}
-                          className="admin-button danger-button small-button"
-                          title="Ban User"
-                          aria-label="Ban user"
-                        >
-                          <FaBan className="button-icon" /> Ban
-                        </button>
-                      )}
+                        {user.isBanned ? (
+                          <button
+                            onClick={() => handleUserAction(user._id, 'unban')}
+                            className="admin-button success-button modern-button small-button"
+                            title="Unban User"
+                            aria-label="Unban user"
+                          >
+                            <FaUnlock className="button-icon" /> Unban
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const reason = prompt(`Enter reason for banning ${user.name}:`);
+                              if (reason) {
+                                handleUserAction(user._id, 'ban', reason);
+                              }
+                            }}
+                            className="admin-button danger-button modern-button small-button"
+                            title="Ban User"
+                            aria-label="Ban user"
+                          >
+                            <FaBan className="button-icon" /> Ban
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -408,7 +423,7 @@ const UsersTab = () => {
           {/* User Details Modal */}
           {showUserModal && selectedUser && (
             <div className="admin-modal-backdrop" onClick={closeUserModal}>
-              <div className="admin-modal improved-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-modal modern-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="admin-modal-header">
                   <h3 className="admin-modal-title">User Details</h3>
                   <button 
@@ -421,29 +436,25 @@ const UsersTab = () => {
                 </div>
                 
                 <div className="admin-modal-body">
-                  <div className="user-profile-section enhanced">
-                    <div className="user-profile">
-                      <div className="avatar-container">
+                  {/* Blue header with user profile */}
+                  <div className="user-profile-header">
+                    <div className="user-profile-content">
+                      <div className="user-avatar-wrapper">
                         <img 
                           src={selectedUser.profileImage || '/images/profile-placeholder.png'} 
                           alt={selectedUser.name} 
                           className="user-avatar-large" 
                         />
                       </div>
-                      <div className="user-info">
-                        <h4 className="user-name-large">{selectedUser.name}</h4>
-                        <p className="user-email">{selectedUser.email}</p>
-                        <div className="user-badges">
-                          <span className={`role-badge ${selectedUser.role || 'user'}`}>
-                            {selectedUser.role ? (selectedUser.role.charAt(0).toUpperCase() + selectedUser.role.slice(1)) : 'User'}
-                          </span>
-                          <span className={`status-badge ${selectedUser.isBanned ? 'banned' : selectedUser.isActive ? 'active' : 'inactive'}`}>
-                            {selectedUser.isBanned ? 'Banned' : selectedUser.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                      <div className="user-header-info">
+                        <h2 className="user-header-name">{selectedUser.name}</h2>
+                        <div className="user-header-badges">
+                          <span className="modern-badge admin-badge">{selectedUser.role?.toUpperCase() || 'USER'}</span>
+                          <span className="modern-badge status-badge">{selectedUser.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
                         </div>
                         <button 
                           onClick={() => window.open(`/user/${selectedUser._id}`, '_blank')} 
-                          className="admin-button secondary-button small-button"
+                          className="view-profile-button"
                         >
                           View Public Profile
                         </button>
@@ -451,93 +462,49 @@ const UsersTab = () => {
                     </div>
                   </div>
                   
-                  <div className="tabs-container">
-                    <div className="tab-navigation">
-                      <button className="tab-button active">Profile Info</button>
-                      <button className="tab-button">Activity</button>
-                      <button className="tab-button">Admin Actions</button>
+                  {/* Tab Navigation */}
+                  <div className="user-modal-tabs">
+                    <button className="user-modal-tab active">Profile Info</button>
+                    <button className="user-modal-tab">Activity</button>
+                    <button className="user-modal-tab">Admin Actions</button>
+                  </div>
+                  
+                  {/* Tab Content */}
+                  <div className="user-modal-content">
+                    <div className="user-details-grid">
+                      <div className="detail-card">
+                        <div className="detail-card-label">User ID</div>
+                        <div className="detail-card-value">{selectedUser._id}</div>
+                      </div>
+                      
+                      <div className="detail-card">
+                        <div className="detail-card-label">Username</div>
+                        <div className="detail-card-value">{selectedUser.username || 'Not set'}</div>
+                      </div>
+                      
+                      <div className="detail-card">
+                        <div className="detail-card-label">Joined</div>
+                        <div className="detail-card-value">{formatDate(selectedUser.createdAt)}</div>
+                      </div>
+                      
+                      <div className="detail-card">
+                        <div className="detail-card-label">Last Login</div>
+                        <div className="detail-card-value">{selectedUser.lastLogin ? formatDate(selectedUser.lastLogin) : 'Never'}</div>
+                      </div>
+                      
+                      <div className="detail-card">
+                        <div className="detail-card-label">Phone</div>
+                        <div className="detail-card-value">{selectedUser.phone || 'Not provided'}</div>
+                      </div>
+                      
+                      <div className="detail-card">
+                        <div className="detail-card-label">Location</div>
+                        <div className="detail-card-value">{selectedUser.location || 'Not provided'}</div>
+                      </div>
                     </div>
                     
-                    <div className="tab-content">
-                      <div className="user-details-section enhanced">
-                        <div className="detail-grid">
-                          <div className="detail-item">
-                            <span className="detail-label">User ID</span>
-                            <p className="detail-value">{selectedUser._id}</p>
-                          </div>
-                          
-                          <div className="detail-item">
-                            <span className="detail-label">Username</span>
-                            <p className="detail-value">{selectedUser.username || 'Not set'}</p>
-                          </div>
-                          
-                          <div className="detail-item">
-                            <span className="detail-label">Joined</span>
-                            <p className="detail-value">{formatDate(selectedUser.createdAt)}</p>
-                          </div>
-                          
-                          <div className="detail-item">
-                            <span className="detail-label">Last Login</span>
-                            <p className="detail-value">{selectedUser.lastLogin ? formatDate(selectedUser.lastLogin) : 'Never'}</p>
-                          </div>
-                          
-                          <div className="detail-item">
-                            <span className="detail-label">Phone</span>
-                            <p className="detail-value">{selectedUser.phone || 'Not provided'}</p>
-                          </div>
-                          
-                          <div className="detail-item">
-                            <span className="detail-label">Location</span>
-                            <p className="detail-value">{selectedUser.location || 'Not provided'}</p>
-                          </div>
-                        </div>
-                        
-                        {selectedUser.bio && (
-                          <div className="detail-item bio-item">
-                            <span className="detail-label">Bio</span>
-                            <p className="detail-value bio-text">{selectedUser.bio}</p>
-                          </div>
-                        )}
-                        
-                        {selectedUser.isBanned && (
-                          <div className="detail-item ban-info enhanced">
-                            <span className="detail-label">Ban Information</span>
-                            <div className="ban-details">
-                              <p><strong>Banned on:</strong> {formatDate(selectedUser.banInfo?.date)}</p>
-                              <p><strong>Reason:</strong> {selectedUser.banInfo?.reason || 'No reason provided'}</p>
-                              <p><strong>Banned by:</strong> {selectedUser.banInfo?.adminName || 'System'}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="activity-section enhanced">
-                    <h4>Activity Summary</h4>
-                    <div className="activity-stats">
-                      <div className="stat-item enhanced">
-                        <span className="stat-value">{selectedUser.stats?.posts || 0}</span>
-                        <span className="stat-label">Posts</span>
-                      </div>
-                      <div className="stat-item enhanced">
-                        <span className="stat-value">{selectedUser.stats?.comments || 0}</span>
-                        <span className="stat-label">Comments</span>
-                      </div>
-                      <div className="stat-item enhanced">
-                        <span className="stat-value">{selectedUser.stats?.courses || 0}</span>
-                        <span className="stat-label">Courses</span>
-                      </div>
-                      <div className="stat-item enhanced">
-                        <span className="stat-value">{selectedUser.stats?.reports || 0}</span>
-                        <span className="stat-label">Reports</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="admin-actions enhanced">
-                    <h4>Admin Actions</h4>
-                    <div className="action-buttons">
+                    {/* Admin Actions */}
+                    <div className="user-modal-actions">
                       {!selectedUser.isBanned ? (
                         <button 
                           onClick={() => {
@@ -546,7 +513,7 @@ const UsersTab = () => {
                               handleUserAction(selectedUser._id, 'ban', reason);
                             }
                           }} 
-                          className="admin-button danger-button"
+                          className="admin-button danger-button modern-button"
                         >
                           <FaBan className="button-icon" /> Ban User
                         </button>
@@ -557,7 +524,7 @@ const UsersTab = () => {
                               handleUserAction(selectedUser._id, 'unban');
                             }
                           }} 
-                          className="admin-button success-button"
+                          className="admin-button success-button modern-button"
                         >
                           <FaUnlock className="button-icon" /> Unban User
                         </button>
@@ -570,7 +537,7 @@ const UsersTab = () => {
                               handleUserAction(selectedUser._id, 'promote');
                             }
                           }} 
-                          className="admin-button primary-button"
+                          className="admin-button primary-button modern-button"
                         >
                           Make Admin
                         </button>
@@ -581,7 +548,7 @@ const UsersTab = () => {
                               handleUserAction(selectedUser._id, 'demote');
                             }
                           }} 
-                          className="admin-button warning-button"
+                          className="admin-button warning-button modern-button"
                         >
                           Remove Admin
                         </button>
@@ -602,6 +569,451 @@ export default UsersTab;
 
 // Add styles for the modal animation and enhanced UI
 const styles = `
+  /* Modern UI Improvements */
+  .modern-tab {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+  }
+  
+  .admin-header-with-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .admin-header-with-actions h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+  
+  .header-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  
+  .modern-filters {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+  
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .search-group.expanded {
+    flex: 1;
+    max-width: 400px;
+  }
+  
+  .search-input-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+  }
+  
+  .modern-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+  }
+  
+  .modern-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
+    outline: none;
+  }
+  
+  .select-wrapper {
+    position: relative;
+  }
+  
+  .modern-select {
+    appearance: none;
+    padding: 0.75rem 2rem 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    min-width: 140px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px;
+  }
+  
+  .modern-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
+    outline: none;
+  }
+  
+  .admin-button.text-button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .admin-button.text-button:hover {
+    color: var(--primary-color);
+    background-color: rgba(74, 108, 247, 0.05);
+  }
+  
+  .admin-button.outline-button {
+    background: none;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.6rem 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .admin-button.outline-button:hover {
+    background-color: rgba(74, 108, 247, 0.05);
+  }
+  
+  .modern-table-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+  
+  .modern-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+  }
+  
+  .modern-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    color: #495057;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .modern-table td {
+    padding: 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .modern-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .modern-table tr:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .user-avatar-container {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-right: 0.75rem;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  .modern-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+  }
+  
+  .user-cell {
+    display: flex;
+    align-items: center;
+  }
+  
+  .user-name {
+    font-weight: 500;
+    color: #212529;
+  }
+  
+  .modern-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-radius: 30px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .role-badge.modern-badge.admin {
+    background-color: #e3f2fd;
+    color: #0d6efd;
+  }
+  
+  .role-badge.modern-badge.user {
+    background-color: #e9ecef;
+    color: #495057;
+  }
+  
+  .status-badge.modern-badge.active {
+    background-color: #d4edda;
+    color: #198754;
+  }
+  
+  .status-badge.modern-badge.inactive {
+    background-color: #f8f9fa;
+    color: #6c757d;
+  }
+  
+  .status-badge.modern-badge.banned {
+    background-color: #f8d7da;
+    color: #dc3545;
+  }
+  
+  .action-buttons-container {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .admin-button.modern-button {
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s ease;
+  }
+  
+  .admin-button.modern-button:hover {
+    transform: translateY(-1px);
+  }
+  
+  .admin-button.modern-button .button-icon {
+    font-size: 0.875rem;
+  }
+  
+  /* User Modal Styles */
+  .modern-modal {
+    border-radius: 12px;
+    overflow: hidden;
+    max-width: 700px;
+    width: 95%;
+    background-color: white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .admin-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .admin-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #212529;
+    margin: 0;
+  }
+  
+  .admin-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+  }
+  
+  .admin-modal-body {
+    padding: 0;
+  }
+  
+  .user-profile-header {
+    background: linear-gradient(135deg, #4a6cf7 0%, #6a8af7 100%);
+    padding: 2rem 1.5rem;
+    color: white;
+  }
+  
+  .user-profile-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  
+  .user-avatar-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .user-avatar-large {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .user-header-info {
+    flex: 1;
+  }
+  
+  .user-header-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+    color: white;
+  }
+  
+  .user-header-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .user-header-badges .modern-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  .view-profile-button {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .view-profile-button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  .user-modal-tabs {
+    display: flex;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #f8f9fa;
+  }
+  
+  .user-modal-tab {
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  
+  .user-modal-tab:hover {
+    color: #4a6cf7;
+  }
+  
+  .user-modal-tab.active {
+    color: #4a6cf7;
+  }
+  
+  .user-modal-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #4a6cf7;
+  }
+  
+  .user-modal-content {
+    padding: 1.5rem;
+  }
+  
+  .user-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .detail-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .detail-card:hover {
+    background-color: #f1f3f5;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+  }
+  
+  .detail-card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .detail-card-value {
+    font-size: 1rem;
+    color: #212529;
+    word-break: break-word;
+  }
+  
+  .user-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+  }
   /* Modern color scheme */
   :root {
     --primary-color: #4a6cf7;
