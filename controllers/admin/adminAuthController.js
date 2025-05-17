@@ -93,6 +93,7 @@ export async function verifyAdminToken(token) {
  */
 export async function adminLogin(credentials) {
   console.log('📧 Admin login attempt for email:', credentials.email);
+  console.log('🔐 Received credentials:', { email: credentials.email, passwordProvided: !!credentials.password });
 
   try {
     const { email, password } = credentials;
@@ -150,6 +151,12 @@ export async function adminLogin(credentials) {
     // Generate JWT token
     let token;
     try {
+      // Ensure we have the JWT_SECRET
+      if (!process.env.JWT_SECRET) {
+        console.error('❌ JWT_SECRET is not defined in environment variables');
+        return { success: false, message: 'Server configuration error', status: 500 };
+      }
+      
       token = jwt.sign(
         { userId: user._id, email: user.email, isAdmin: true },
         process.env.JWT_SECRET,

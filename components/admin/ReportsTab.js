@@ -23,11 +23,14 @@ const ReportsTab = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
+      setError(null); // Reset error state before fetching
       const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
       
       if (!token) {
         throw new Error('Authentication token not found');
       }
+      
+      console.log('Admin token for reports:', token);
       
       // Build query params
       const params = new URLSearchParams();
@@ -37,9 +40,11 @@ const ReportsTab = () => {
         params.append('status', filters.status);
       }
       
-      if (filters.type) {
-        params.append('type', filters.type);
-      }
+      // Since we only support user reports, we'll remove the type filter completely
+      // This ensures all reports show up regardless of their type
+      // params.append('type', 'user');
+      
+      console.log('Fetching reports with params:', params.toString());
       
       if (filters.startDate) {
         params.append('startDate', filters.startDate);
@@ -52,15 +57,26 @@ const ReportsTab = () => {
       const response = await fetch(`/api/admin/reports?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        cache: 'no-store' // Prevent caching to ensure fresh data
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch reports');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch reports');
       }
       
       const data = await response.json();
-      setReports(data.reports || []);
+      console.log('Reports data received:', data);
+      
+      // Check if reports array exists and has items
+      if (!data.reports || !Array.isArray(data.reports)) {
+        console.warn('No reports array in response or invalid format');
+        setReports([]);
+      } else {
+        setReports(data.reports);
+      }
+      
       setTotalPages(data.pagination?.pages || 1);
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -100,10 +116,50 @@ const ReportsTab = () => {
         setSelectedReport(null);
       }
       
-      alert(`Report ${action === 'resolve' ? 'resolved' : 'dismissed'} successfully`);
+      // Use a more elegant notification instead of alert
+      const notification = document.createElement('div');
+      notification.className = 'report-notification success';
+      notification.innerHTML = `
+        <span class="notification-icon">${action === 'resolve' ? '✅' : '❌'}</span>
+        <span>Report ${action === 'resolve' ? 'resolved' : 'dismissed'} successfully</span>
+        <button class="close-notification">×</button>
+      `;
+      document.body.appendChild(notification);
+      
+      // Add event listener to close button
+      const closeButton = notification.querySelector('.close-notification');
+      closeButton.addEventListener('click', () => {
+        notification.remove();
+      });
+      
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
     } catch (error) {
       console.error(`Error ${action}ing report:`, error);
-      alert(`Error: ${error.message}`);
+      // Use a more elegant error notification
+      const notification = document.createElement('div');
+      notification.className = 'report-notification error';
+      notification.innerHTML = `
+        <span class="notification-icon">⚠️</span>
+        <span>Error: ${error.message}</span>
+        <button class="close-notification">×</button>
+      `;
+      document.body.appendChild(notification);
+      
+      // Add event listener to close button
+      const closeButton = notification.querySelector('.close-notification');
+      closeButton.addEventListener('click', () => {
+        notification.remove();
+      });
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 500);
+      }, 5000);
     }
   };
   
@@ -115,10 +171,16 @@ const ReportsTab = () => {
       [name]: value
     }));
     setPage(1); // Reset to first page when filter changes
+    
+    // Immediately fetch reports when filter changes for better UX
+    setTimeout(() => {
+      fetchReports();
+    }, 100);
   };
   
   // Apply filters
   const applyFilters = () => {
+    setLoading(true);
     fetchReports();
   };
   
@@ -126,7 +188,7 @@ const ReportsTab = () => {
   const resetFilters = () => {
     setFilters({
       status: 'pending',
-      type: '',
+      type: 'user',
       startDate: '',
       endDate: ''
     });
@@ -141,21 +203,19 @@ const ReportsTab = () => {
   // Load reports on mount and when filters/page changes
   useEffect(() => {
     fetchReports();
-  }, [page, filters.status, filters.type]);
+  }, [page, filters.status]);
   
   // Set up auto-refresh for reports
   useEffect(() => {
-    // Only auto-refresh if viewing pending reports
-    if (filters.status === 'pending') {
-      const intervalId = setInterval(() => {
-        console.log('Auto-refreshing reports...');
-        fetchReports();
-      }, 60000); // Refresh every minute
-      
-      return () => {
-        clearInterval(intervalId);
-      };
-    }
+    // Auto-refresh regardless of filter status to ensure data is always fresh
+    const intervalId = setInterval(() => {
+      console.log('Auto-refreshing reports...');
+      fetchReports();
+    }, 30000); // Refresh every 30 seconds for better real-time updates
+    
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [filters.status]);
   
   // Handle selecting/deselecting all reports
@@ -220,6 +280,7 @@ const ReportsTab = () => {
   if (loading && !reports.length) {
     return (
       <div className="loading-container">
+        <div className="loading-spinner-large"></div>
         <p>Loading reports...</p>
       </div>
     );
@@ -243,38 +304,41 @@ const ReportsTab = () => {
         
         {selectedReports.length > 0 && (
           <div className="bulk-actions">
-            <span>{selectedReports.length} reports selected</span>
-            <button 
-              onClick={() => handleBulkAction('review')}
-              disabled={bulkActionLoading}
-              className="bulk-action-button review"
-            >
-              Mark All as Reviewed
-            </button>
-            <button 
-              onClick={() => handleBulkAction('resolve')}
-              disabled={bulkActionLoading}
-              className="bulk-action-button resolve"
-            >
-              Resolve All
-            </button>
-            <button 
-              onClick={() => handleBulkAction('dismiss')}
-              disabled={bulkActionLoading}
-              className="bulk-action-button dismiss"
-            >
-              Dismiss All
-            </button>
-            <button 
-              onClick={() => setSelectedReports([])}
-              className="bulk-action-button cancel"
-            >
-              Cancel
-            </button>
+            <span className="selected-count">{selectedReports.length} reports selected</span>
+            <div className="bulk-action-buttons">
+              <button 
+                onClick={() => handleBulkAction('review')}
+                disabled={bulkActionLoading}
+                className="bulk-action-button review"
+              >
+                <span className="action-icon">✓</span> Mark All as Reviewed
+              </button>
+              <button 
+                onClick={() => handleBulkAction('resolve')}
+                disabled={bulkActionLoading}
+                className="bulk-action-button resolve"
+              >
+                <span className="action-icon">✅</span> Resolve All
+              </button>
+              <button 
+                onClick={() => handleBulkAction('dismiss')}
+                disabled={bulkActionLoading}
+                className="bulk-action-button dismiss"
+              >
+                <span className="action-icon">❌</span> Dismiss All
+              </button>
+              <button 
+                onClick={() => setSelectedReports([])}
+                className="bulk-action-button cancel"
+              >
+                <span className="action-icon">↩</span> Cancel
+              </button>
+            </div>
           </div>
         )}
         
         <div className="filter-controls">
+          <span className="filter-title">Status:</span>
           <select
             value={filters.status}
             onChange={(e) => setFilters({...filters, status: e.target.value})}
@@ -285,23 +349,15 @@ const ReportsTab = () => {
             <option value="resolved">Resolved</option>
             <option value="dismissed">Dismissed</option>
           </select>
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters({...filters, type: e.target.value})}
-            className="filter-select"
-          >
-            <option value="">All Types</option>
-            <option value="user">User</option>
-            <option value="post">Post</option>
-            <option value="comment">Comment</option>
-            <option value="message">Message</option>
-          </select>
+          {/* User type selector removed as requested */}
+          <span className="filter-title">From:</span>
           <input
             type="date"
             value={filters.startDate}
             onChange={(e) => setFilters({...filters, startDate: e.target.value})}
             className="filter-input"
           />
+          <span className="filter-title">To:</span>
           <input
             type="date"
             value={filters.endDate}
@@ -319,7 +375,12 @@ const ReportsTab = () => {
       
       {reports.length === 0 ? (
         <div className="empty-state">
-          <p>No reports found matching the current filters.</p>
+          <div className="empty-state-icon">📋</div>
+          <h3>No Reports Found</h3>
+          <p>No user reports found matching the current filters.</p>
+          <button onClick={fetchReports} className="retry-button">
+            <span className="refresh-icon">🔄</span> Refresh Reports
+          </button>
         </div>
       ) : (
         <div className="reports-container">
@@ -849,3 +910,514 @@ const ReportsTab = () => {
 };
 
 export default ReportsTab;
+
+// Add improved styles at the end of the file
+const styles = `
+  /* Loading spinner animation */
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+  
+  .loading-spinner-large {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  
+  .retry-button {
+    margin-top: 16px;
+    padding: 8px 16px;
+    background-color: #4299e1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .retry-button:hover {
+    background-color: #3182ce;
+  }
+  
+  .refresh-icon {
+    display: inline-block;
+    animation: spin 2s linear infinite;
+    animation-play-state: paused;
+  }
+  
+  .retry-button:hover .refresh-icon {
+    animation-play-state: running;
+  }
+  
+  /* Notification styles */
+  .report-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    max-width: 350px;
+    animation: slide-in 0.3s ease-out forwards;
+  }
+  
+  @keyframes slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  
+  .report-notification.fade-out {
+    animation: slide-out 0.5s ease-in forwards;
+  }
+  
+  @keyframes slide-out {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+  
+  .report-notification.success {
+    background-color: #d1fae5;
+    border-left: 4px solid #10b981;
+    color: #065f46;
+  }
+  
+  .report-notification.error {
+    background-color: #fee2e2;
+    border-left: 4px solid #ef4444;
+    color: #991b1b;
+  }
+  
+  .notification-icon {
+    font-size: 18px;
+  }
+  
+  .close-notification {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+  }
+  
+  .close-notification:hover {
+    opacity: 1;
+  }
+  
+  .reports-tab {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .reports-header {
+    margin-bottom: 20px;
+  }
+  
+  .reports-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1a202c;
+  }
+  
+  .bulk-actions {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .selected-count {
+    font-weight: 500;
+    color: #4a5568;
+  }
+  
+  .bulk-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .bulk-action-button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    border: none;
+  }
+  
+  .bulk-action-button.review {
+    background-color: #ebf8ff;
+    color: #2b6cb0;
+  }
+  
+  .bulk-action-button.review:hover {
+    background-color: #bee3f8;
+  }
+  
+  .bulk-action-button.resolve {
+    background-color: #f0fff4;
+    color: #2f855a;
+  }
+  
+  .bulk-action-button.resolve:hover {
+    background-color: #c6f6d5;
+  }
+  
+  .bulk-action-button.dismiss {
+    background-color: #fff5f5;
+    color: #c53030;
+  }
+  
+  .bulk-action-button.dismiss:hover {
+    background-color: #fed7d7;
+  }
+  
+  .bulk-action-button.cancel {
+    background-color: #f7fafc;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .bulk-action-button.cancel:hover {
+    background-color: #edf2f7;
+  }
+  
+  .action-icon {
+    font-size: 14px;
+  }
+  
+  .filter-controls {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .filter-title {
+    font-weight: 500;
+    color: #4a5568;
+    margin-right: 4px;
+  }
+  
+  .filter-select, .filter-input {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: white;
+    min-width: 150px;
+  }
+  
+  .apply-button, .reset-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .apply-button {
+    background-color: #4299e1;
+    color: white;
+    border: none;
+  }
+  
+  .apply-button:hover {
+    background-color: #3182ce;
+  }
+  
+  .reset-button {
+    background-color: white;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .reset-button:hover {
+    background-color: #f7fafc;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #e2e8f0;
+  }
+  
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #a0aec0;
+  }
+  
+  .empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #4a5568;
+  }
+  
+  .empty-state p {
+    color: #718096;
+    margin-bottom: 16px;
+  }
+  
+  .reports-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .reports-table th {
+    background-color: #f7fafc;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .reports-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  
+  .reports-table tr:last-child td {
+    border-bottom: none;
+  }
+  
+  .reports-table tr:hover {
+    background-color: #f8fafc;
+  }
+  
+  .selected-row {
+    background-color: #ebf8ff !important;
+  }
+  
+  .user-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .user-avatar-small {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  
+  .status-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .status-badge.resolved {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+  
+  .status-badge.dismissed {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 24px;
+    gap: 8px;
+  }
+  
+  .pagination-button {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .pagination-button:hover:not(:disabled) {
+    background-color: #f7fafc;
+  }
+  
+  .pagination-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .pagination-button.active {
+    background-color: #4299e1;
+    color: white;
+    border-color: #4299e1;
+  }
+  
+  .report-detail-panel {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .detail-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a202c;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: #a0aec0;
+  }
+  
+  .close-button:hover {
+    color: #4a5568;
+  }
+  
+  .detail-content {
+    margin-bottom: 20px;
+  }
+  
+  .detail-section {
+    margin-bottom: 16px;
+  }
+  
+  .detail-label {
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 4px;
+  }
+  
+  .detail-value {
+    color: #1a202c;
+  }
+  
+  .detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  
+  .action-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .action-button.resolve {
+    background-color: #48bb78;
+    color: white;
+    border: none;
+  }
+  
+  .action-button.resolve:hover {
+    background-color: #38a169;
+  }
+  
+  .action-button.dismiss {
+    background-color: #f56565;
+    color: white;
+    border: none;
+  }
+  
+  .action-button.dismiss:hover {
+    background-color: #e53e3e;
+  }
+  
+  @media (max-width: 768px) {
+    .filter-controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .reports-table {
+      display: block;
+      overflow-x: auto;
+    }
+    
+    .bulk-action-buttons {
+      flex-direction: column;
+    }
+  }
+`;
+
+// Inject the styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = styles;
+  document.head.appendChild(styleElement);
+}

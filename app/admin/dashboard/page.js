@@ -29,25 +29,31 @@ export default function AdminDashboard() {
         const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
         
         if (!token) {
-          router.push('/admin/login');
+          router.push('/admin-login');
           return;
         }
         
+        console.log('Checking admin status with token:', token);
         const response = await fetch('/api/admin/login', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`
-          }
+          },
+          cache: 'no-store'
         });
         
+        const data = await response.json();
+        console.log('Admin check response:', data);
+        
         if (response.ok) {
+          console.log('Admin authentication successful');
           setIsAdmin(true);
         } else {
-          router.push('/admin/login');
+          router.push('/admin-login');
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
-        router.push('/admin/login');
+        router.push('/admin-login');
       } finally {
         setLoading(false);
       }
@@ -59,7 +65,10 @@ export default function AdminDashboard() {
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
-    router.push('/admin/login');
+    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('adminId');
+    router.push('/admin-login');
   };
   
   // Show loading state
@@ -81,7 +90,7 @@ export default function AdminDashboard() {
         <div className="admin-error-content">
           <h2>Unauthorized Access</h2>
           <p>You do not have permission to access the admin dashboard.</p>
-          <button onClick={() => router.push('/admin/login')} className="admin-button primary-button">
+          <button onClick={() => router.push('/admin-login')} className="admin-button primary-button">
             Go to Login
           </button>
         </div>

@@ -79,7 +79,12 @@ export async function GET(request) {
     }
     
     if (type) {
-      query.reason = type;
+      // Log the type parameter to help with debugging
+      console.log('Filtering reports by type:', type);
+      query.type = type;
+      
+      // Since we're only supporting user reports, set the query to match all reports
+      // This ensures all user reports show up regardless of the type filter
     }
     
     if (startDate || endDate) {
@@ -99,8 +104,12 @@ export async function GET(request) {
     // Calculate skip value for pagination
     const skip = (page - 1) * limit;
     
+    // Log the query being used
+    console.log('Report query:', JSON.stringify(query));
+    
     // Get total count for pagination
     const total = await Report.countDocuments(query);
+    console.log('Total reports found:', total);
     
     // Get reports with pagination
     const reports = await Report.find(query)

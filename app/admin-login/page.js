@@ -18,11 +18,14 @@ export default function AdminLoginPage() {
 
     try {
       console.log('Sending admin login request for:', email);
+      setErrorMsg('');
 
+      // Add cache: 'no-store' to prevent caching issues
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        cache: 'no-store'
       });
 
       const data = await res.json();
@@ -30,8 +33,9 @@ export default function AdminLoginPage() {
       if (!res.ok) {
         setErrorMsg(data.message || 'Login failed');
         console.error('Admin login failed:', data.message);
+        setLoading(false);
       } else {
-        console.log('Admin login successful');
+        console.log('Admin login successful with token:', data.token);
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('isAdmin', 'true');
         
@@ -44,8 +48,13 @@ export default function AdminLoginPage() {
           console.warn('Admin ID not received in login response');
         }
         
-        // Use replace instead of push for more reliable navigation
-        window.location.href = '/admin/dashboard';
+        // Use router.push for Next.js navigation
+        console.log('Redirecting to admin dashboard...');
+        
+        // Use setTimeout to ensure localStorage is updated before navigation
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 100);
       }
     } catch (err) {
       console.error('Admin login error:', err);
@@ -103,8 +112,20 @@ export default function AdminLoginPage() {
 
           {errorMsg && <p className="error-message">{errorMsg}</p>}
 
-          <button type="submit" className="login-button admin-login-button" disabled={loading}>
-            {loading ? 'Logging in...' : 'Admin Login'}
+          <button 
+            type="submit" 
+            className="login-button admin-login-button" 
+            disabled={loading}
+            aria-label="Login as administrator"
+          >
+            {loading ? (
+              <>
+                <span className="loading-spinner"></span>
+                <span>Logging in...</span>
+              </>
+            ) : (
+              'Admin Login'
+            )}
           </button>
 
           <div className="login-footer">
