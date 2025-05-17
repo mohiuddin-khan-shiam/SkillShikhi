@@ -128,6 +128,31 @@ export async function POST(request) {
       return NextResponse.json({ message: 'userId and sessionId are required' }, { status: 400 });
     }
     
+    // Check if this user already has an active session
+    const existingSession = await Session.findOne({ 
+      userId, 
+      isActive: true 
+    });
+    
+    if (existingSession) {
+      // Update the existing session with the new lastActivity time
+      existingSession.lastActivity = new Date();
+      existingSession.activityCount = (existingSession.activityCount || 0) + 1;
+      
+      // If there's new information, update it
+      if (ipAddress) existingSession.ipAddress = ipAddress;
+      if (userAgent) existingSession.userAgent = userAgent;
+      if (device) existingSession.device = device;
+      if (location) existingSession.location = location;
+      
+      await existingSession.save();
+      
+      return NextResponse.json({
+        message: 'Session updated successfully',
+        session: existingSession
+      });
+    }
+    
     // Create new session
     const session = new Session({
       userId,
@@ -138,7 +163,8 @@ export async function POST(request) {
       location,
       startTime: new Date(),
       lastActivity: new Date(),
-      isActive: true
+      isActive: true,
+      activityCount: 1
     });
     
     await session.save();

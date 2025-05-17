@@ -23,10 +23,11 @@ const SessionsTab = () => {
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+      // Always use adminToken for admin actions
+      const token = localStorage.getItem('adminToken');
       
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error('Admin authentication token not found. Please log in again.');
       }
       
       // Build query params
@@ -46,7 +47,8 @@ const SessionsTab = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch sessions');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch sessions');
       }
       
       const data = await response.json();
@@ -63,10 +65,11 @@ const SessionsTab = () => {
   // Terminate session
   const terminateSession = async (sessionId, reason = 'Admin terminated') => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+      // Always use adminToken for admin actions
+      const token = localStorage.getItem('adminToken');
       
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error('Admin authentication token not found. Please log in again.');
       }
       
       const response = await fetch(`/api/admin/sessions/${sessionId}/terminate`, {

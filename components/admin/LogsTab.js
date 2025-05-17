@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { apiFetch } from '../../utils/apiUtils';
 
 const LogsTab = () => {
   const [logs, setLogs] = useState([]);
@@ -68,7 +69,7 @@ const LogsTab = () => {
         params.append('endDate', filters.endDate);
       }
       
-      const response = await fetch(`/api/admin/logs?${params.toString()}`, {
+      const response = await apiFetch(`/api/admin/logs?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

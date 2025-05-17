@@ -7,37 +7,44 @@ import dbConnect from '../../../../lib/mongodb';
 import ActivityLog from '../../../../models/ActivityLog';
 import User from '../../../../models/User';
 import jwt from 'jsonwebtoken';
+import { successResponse, errorResponse } from '../../../../utils/apiResponse';
 
 // Helper function to verify admin token
 async function verifyAdminToken(request) {
-  // Get the authorization header
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { error: 'Unauthorized', status: 401 };
-  }
-  
-  // Verify token
-  const token = authHeader.split(' ')[1];
-  let decoded;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { error: 'Unauthorized', status: 401 };
+    }
+    
+    // Verify token
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return { error: 'Invalid token', status: 401 };
+    }
+    
+    // Get user from token
+    const userId = decoded.userId;
+    await dbConnect();
+    const user = await User.findById(userId);
+    if (!user) {
+      return { error: 'User not found', status: 404 };
+    }
+    
+    // Check if user is admin
+    if (!user.isAdmin) {
+      return { error: 'Unauthorized - Admin access required', status: 403 };
+    }
+    
+    return { user };
   } catch (error) {
-    return { error: 'Invalid token', status: 401 };
+    console.error('Error verifying admin token:', error);
+    return { error: 'Internal server error', status: 500 };
   }
-  
-  // Get user from token
-  const userId = decoded.userId;
-  const user = await User.findById(userId);
-  if (!user) {
-    return { error: 'User not found', status: 404 };
-  }
-  
-  // Check if user is admin
-  if (!user.isAdmin) {
-    return { error: 'Unauthorized - Admin access required', status: 403 };
-  }
-  
-  return { user };
 }
 
 // GET logs with filtering options
@@ -85,7 +92,7 @@ export async function GET(request) {
     // Get total count for pagination
     const total = await ActivityLog.countDocuments(query);
     
-    return NextResponse.json({
+    return successResponse({
       logs,
       pagination: {
         total,
@@ -96,7 +103,7 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Error fetching activity logs:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return errorResponse('Internal server error', 500);
   }
 }
 
@@ -106,19 +113,39 @@ export async function POST(request) {
     // Connect to database
     await dbConnect();
     
-    // Verify admin token
-    const authResult = await verifyAdminToken(request);
-    if (authResult.error) {
-      return NextResponse.json({ message: authResult.error }, { status: authResult.status });
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return errorResponse('Invalid request body', 400);
     }
     
-    // Parse request body
-    const body = await request.json();
+    // Verify admin token or user token
+    const authResult = await verifyAdminToken(request);
+    if (authResult.error && authResult.status === 403) {
+      // If not admin, check if user is performing action on own account
+      const token = request.headers.get('authorization')?.split(' ')[1];
+      if (!token) {
+        return errorResponse('Authentication required', 401);
+      }
+      
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Only allow logging actions for the authenticated user
+        body.userId = decoded.userId; // Override userId to ensure it's the current user
+      } catch (error) {
+        return errorResponse('Invalid token', 401);
+      }
+    } else if (authResult.error) {
+      return errorResponse(authResult.error, authResult.status);
+    }
+    
     const { userId, actionType, targetId, targetModel, ipAddress, userAgent, details } = body;
     
     // Validate required fields
     if (!userId || !actionType) {
-      return NextResponse.json({ message: 'userId and actionType are required' }, { status: 400 });
+      return errorResponse('userId and actionType are required', 400);
     }
     
     // Create new log entry
@@ -135,12 +162,12 @@ export async function POST(request) {
     
     await log.save();
     
-    return NextResponse.json({
+    return successResponse({
       message: 'Activity log created successfully',
       log
     });
   } catch (error) {
     console.error('Error creating activity log:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return errorResponse('Internal server error', 500);
   }
 }

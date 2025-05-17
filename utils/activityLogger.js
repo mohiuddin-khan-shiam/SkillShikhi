@@ -5,6 +5,7 @@
  * It helps maintain a consistent approach to activity logging and ensures all necessary
  * information is captured for admin reporting and analytics.
  */
+import { apiFetch } from './apiUtils';
 
 /**
  * Log a user activity
@@ -36,7 +37,7 @@ export async function logActivity(token, actionType, targetId = null, targetMode
       ...(ipAddress && { ipAddress })
     };
     
-    const response = await fetch('/api/admin/logs', {
+    const response = await apiFetch('/api/admin/logs', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
