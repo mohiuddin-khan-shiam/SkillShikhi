@@ -94,10 +94,11 @@ const UsersTab = () => {
   // Handle user action (ban, unban, etc.)
   const handleUserAction = async (userId, action, reason = '') => {
     try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+      // Always prioritize the adminToken for admin actions
+      const token = localStorage.getItem('adminToken');
       
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error('Admin authentication token not found. Please login again.');
       }
       
       // Check if admin is trying to ban themselves
@@ -126,6 +127,7 @@ const UsersTab = () => {
       }
       
       console.log(`Sending ${action} request for user ${userId}:`, requestBody);
+      console.log('Using admin token:', token.substring(0, 20) + '...');
       
       const response = await fetch(`/api/admin/users/${userId}/${action}`, {
         method: 'PATCH',

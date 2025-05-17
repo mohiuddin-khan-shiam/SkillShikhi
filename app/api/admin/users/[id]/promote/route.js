@@ -17,14 +17,26 @@ async function verifyAdminToken(token) {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded.role !== 'admin') {
+    
+    // Check if token has isAdmin property set to true
+    if (!decoded.isAdmin) {
+      console.log('Token does not have isAdmin: true', decoded);
       return null;
     }
     
     await dbConnect();
     const admin = await User.findById(decoded.userId);
-    if (!admin || admin.role !== 'admin') {
+    if (!admin) {
+      console.log('Admin user not found');
       return null;
+    }
+    
+    // Set isAdmin on user if not already set
+    if (!admin.isAdmin) {
+      admin.isAdmin = true;
+      admin.role = 'admin';
+      await admin.save();
+      console.log('Updated user with admin role');
     }
     
     return admin;

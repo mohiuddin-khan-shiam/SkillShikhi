@@ -41,8 +41,11 @@ export async function sessionMiddleware(req, event) {
       device = 'Desktop';
     }
     
+    // Get base URL from request
+    const baseUrl = url.origin;
+    
     // Create or update session
-    const sessionResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/admin/sessions`, {
+    const sessionResponse = await fetch(`${baseUrl}/api/admin/sessions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

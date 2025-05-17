@@ -1,20 +1,57 @@
 import { NextResponse } from 'next/server';
-import { sessionMiddleware } from './middleware/sessionTracker';
 
 /**
  * Main middleware function
  * This middleware integrates all middleware functions
  */
-export async function middleware(req, event) {
-  // Run session tracking middleware
-  const sessionResponse = await sessionMiddleware(req, event);
-  if (sessionResponse !== NextResponse.next()) {
-    return sessionResponse;
+export async function middleware(req) {
+  try {
+    // Skip if not an authentication-related route
+    const url = new URL(req.url);
+    const isAuthRoute = url.pathname.includes('/api/auth') || 
+                       url.pathname.includes('/api/login') || 
+                       url.pathname.includes('/api/admin/login');
+    
+    // Only track sessions for authentication routes
+    if (!isAuthRoute) {
+      return NextResponse.next();
+    }
+    
+    // Get authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.next();
+    }
+    
+    // Extract user information from the request
+    const token = authHeader.split(' ')[1];
+    const userAgent = req.headers.get('user-agent') || 'Unknown';
+    const ipAddress = req.headers.get('x-forwarded-for') || 
+                     req.headers.get('x-real-ip') || 
+                     'Unknown';
+    
+    // Determine device type from user agent
+    let device = 'Unknown';
+    if (userAgent.includes('Mobile')) {
+      device = 'Mobile';
+    } else if (userAgent.includes('Tablet')) {
+      device = 'Tablet';
+    } else {
+      device = 'Desktop';
+    }
+    
+    // Continue with the request - skip session tracking for now
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Error in middleware:', error);
+    return NextResponse.next();
   }
-  
-  // Continue with the request
-  return NextResponse.next();
 }
 
-// Export the matcher configuration from session middleware
-export { config } from './middleware/sessionTracker';
+export const config = {
+  matcher: [
+    '/api/auth/:path*',
+    '/api/login',
+    '/api/admin/login'
+  ],
+};
