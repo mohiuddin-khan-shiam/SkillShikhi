@@ -1,4 +1,50 @@
 import { NextResponse } from 'next/server';
+import { getAbsoluteUrl } from './utils/apiUtils';
+
+/**
+ * Base64 URL decoder that works in both browser and Node.js
+ */
+function base64UrlDecode(str) {
+  // Replace non-url compatible chars with base64 standard chars
+  let input = str.replace(/-/g, '+').replace(/_/g, '/');
+  
+  // Pad out with standard base64 required padding characters
+  const pad = input.length % 4;
+  if (pad) {
+    if (pad === 1) {
+      throw new Error('InvalidLengthError: Input base64url string is the wrong length to determine padding');
+    }
+    input += new Array(5-pad).join('=');
+  }
+  
+  // Use either browser or Node.js approach to decode
+  if (typeof atob === 'function') {
+    return decodeURIComponent(atob(input).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  } else {
+    // Node.js approach
+    return Buffer.from(input, 'base64').toString('utf-8');
+  }
+}
+
+/**
+ * Extract payload from JWT token without verification
+ */
+function extractJwtPayload(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+    
+    const payload = base64UrlDecode(parts[1]);
+    return JSON.parse(payload);
+  } catch (error) {
+    console.error('Failed to extract JWT payload:', error);
+    return null;
+  }
+}
 
 /**
  * Main middleware function
@@ -40,7 +86,48 @@ export async function middleware(req) {
       device = 'Desktop';
     }
     
-    // Continue with the request - skip session tracking for now
+    // Try to decode the token to get the user ID
+    try {
+      // Extract payload from token
+      const payload = extractJwtPayload(token);
+      const userId = payload?.userId;
+      
+      if (userId) {
+        // Generate a unique session ID
+        const sessionId = `${userId}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+        
+        // Get the base URL for the API
+        const baseUrl = url.origin;
+        const sessionsUrl = `${baseUrl}/api/admin/sessions`;
+        
+        // Call the sessions API to track this activity
+        try {
+          await fetch(sessionsUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              userId,
+              sessionId,
+              ipAddress,
+              userAgent,
+              device
+            })
+          });
+          // Ignore response - we don't want to block if this fails
+        } catch (sessionError) {
+          // Log but don't block
+          console.warn('Session tracking failed:', sessionError.message);
+        }
+      }
+    } catch (tokenError) {
+      // Just log the error and continue
+      console.warn('Token parsing failed in session middleware:', tokenError.message);
+    }
+    
+    // Continue with the request
     return NextResponse.next();
   } catch (error) {
     console.error('Error in middleware:', error);

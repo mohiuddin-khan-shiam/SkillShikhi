@@ -121,27 +121,30 @@ export async function POST(request) {
       return errorResponse('Invalid request body', 400);
     }
     
-    // Verify admin token or user token
-    const authResult = await verifyAdminToken(request);
-    if (authResult.error && authResult.status === 403) {
-      // If not admin, check if user is performing action on own account
-      const token = request.headers.get('authorization')?.split(' ')[1];
-      if (!token) {
-        return errorResponse('Authentication required', 401);
-      }
-      
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Only allow logging actions for the authenticated user
-        body.userId = decoded.userId; // Override userId to ensure it's the current user
-      } catch (error) {
-        return errorResponse('Invalid token', 401);
-      }
-    } else if (authResult.error) {
-      return errorResponse(authResult.error, authResult.status);
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return errorResponse('Authentication required', 401);
     }
     
-    const { userId, actionType, targetId, targetModel, ipAddress, userAgent, details } = body;
+    // Extract the token
+    const token = authHeader.split(' ')[1];
+    
+    let userId;
+    
+    try {
+      // Verify the token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.userId;
+      
+      // Use the userId from the token to ensure security
+      body.userId = userId;
+    } catch (jwtError) {
+      console.error('JWT verification failed:', jwtError);
+      return errorResponse('Invalid authentication token', 401);
+    }
+    
+    const { actionType, targetId, targetModel, ipAddress, userAgent, details } = body;
     
     // Validate required fields
     if (!userId || !actionType) {

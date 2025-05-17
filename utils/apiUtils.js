@@ -14,10 +14,24 @@ import config from '../config';
  * @returns {string} - Absolute URL
  */
 export function getAbsoluteUrl(path) {
+  // Handle browser environment
+  if (typeof window !== 'undefined') {
+    // For browser environment, use current origin
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+    return `${window.location.origin}${normalizedPath}`;
+  }
+  
+  // For server environment, use config
   const baseUrl = config.app.baseUrl || 'http://localhost:3000';
-  // Make sure path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return new URL(normalizedPath, baseUrl).toString();
+  
+  try {
+    return new URL(normalizedPath, baseUrl).toString();
+  } catch (error) {
+    console.error('Error constructing URL:', error);
+    // Fallback to simple concatenation
+    return `${baseUrl}${normalizedPath}`;
+  }
 }
 
 /**

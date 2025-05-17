@@ -37,23 +37,32 @@ export async function logActivity(token, actionType, targetId = null, targetMode
       ...(ipAddress && { ipAddress })
     };
     
-    const response = await apiFetch('/api/admin/logs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to log activity: ${response.statusText}`);
+    try {
+      const response = await apiFetch('/api/admin/logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        console.warn(`Activity logging failed with status ${response.status}: ${response.statusText}`);
+        // Don't throw, we'll continue without logging
+        return null;
+      }
+      
+      const data = await response.json();
+      return data.log;
+    } catch (fetchError) {
+      // Just log the error and continue without failing the parent operation
+      console.warn('Failed to log activity:', fetchError.message);
+      return null;
     }
-    
-    const data = await response.json();
-    return data.log;
   } catch (error) {
-    console.error('Error logging activity:', error);
+    console.error('Error in activity logger:', error);
+    // Don't throw, the application should continue even if logging fails
     return null;
   }
 }
