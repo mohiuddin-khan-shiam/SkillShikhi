@@ -25,7 +25,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+        // Only use adminToken, not regular token for admin routes
+        const token = localStorage.getItem('adminToken');
         
         if (!token) {
           router.push('/admin-login');

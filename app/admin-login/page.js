@@ -36,12 +36,17 @@ export default function AdminLoginPage() {
         setLoading(false);
       } else {
         console.log('Admin login successful with token:', data.token);
+        
+        // Clear any existing tokens first to prevent conflicts
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        
+        // Set admin-specific tokens
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('isAdmin', 'true');
         
         // Store the user ID in localStorage
         if (data.user && data.user.id) {
-          localStorage.setItem('userId', data.user.id);
           localStorage.setItem('adminId', data.user.id);
           console.log('Saved admin ID to localStorage:', data.user.id);
         } else {
@@ -54,7 +59,7 @@ export default function AdminLoginPage() {
         // Use setTimeout to ensure localStorage is updated before navigation
         setTimeout(() => {
           router.push('/admin/dashboard');
-        }, 100);
+        }, 300); // Increased timeout for better reliability
       }
     } catch (err) {
       console.error('Admin login error:', err);

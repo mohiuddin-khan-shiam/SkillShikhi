@@ -36,17 +36,20 @@ const LogsTab = () => {
     { value: 'account_ban', label: 'Account Ban' },
     { value: 'account_unban', label: 'Account Unban' },
     { value: 'session_terminate', label: 'Session Terminate' },
-    { value: 'content_moderate', label: 'Content Moderate' }
+    { value: 'content_moderate', label: 'Content Moderate' },
+    { value: 'admin_dashboard_visit', label: 'Admin Dashboard Visit' },
+    { value: 'VIEW_REPORTS', label: 'View Reports' },
+    { value: 'VIEW_USERS', label: 'View Users' }
   ];
   
   // Fetch logs
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken');
       
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error('Admin authentication token not found. Please log in again.');
       }
       
       // Build query params
@@ -283,7 +286,9 @@ const LogsTab = () => {
                     </td>
                     <td>
                       <span className={`action-badge ${log.actionType}`}>
-                        {log.actionType.replace('_', ' ')}
+                        {log.actionType.includes('_') 
+                          ? log.actionType.replace(/_/g, ' ') 
+                          : log.actionType.replace(/([A-Z])/g, ' $1').trim()}
                       </span>
                     </td>
                     <td>
@@ -377,9 +382,11 @@ const LogsTab = () => {
                 <div className="detail-item">
                   <span className="detail-label">Action:</span>
                   <p className="detail-value">
-                    <span className={`action-badge ${selectedLog.actionType}`}>
-                      {selectedLog.actionType.replace('_', ' ')}
-                    </span>
+                                      <span className={`action-badge ${selectedLog.actionType}`}>
+                    {selectedLog.actionType.includes('_') 
+                      ? selectedLog.actionType.replace(/_/g, ' ') 
+                      : selectedLog.actionType.replace(/([A-Z])/g, ' $1').trim()}
+                  </span>
                   </p>
                 </div>
                 

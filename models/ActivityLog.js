@@ -24,7 +24,10 @@ const ActivityLogSchema = new mongoose.Schema({
       'account_ban',
       'account_unban',
       'session_terminate',
-      'content_moderate'
+      'content_moderate',
+      'admin_dashboard_visit',
+      'VIEW_REPORTS',
+      'VIEW_USERS'
     ]
   },
   targetId: {
@@ -35,7 +38,7 @@ const ActivityLogSchema = new mongoose.Schema({
   targetModel: {
     // Model name of the target (Post, Comment, User, etc.)
     type: String,
-    enum: ['User', 'Post', 'Comment', 'Message', null],
+    enum: ['User', 'Post', 'Comment', 'Message', 'Report', null],
   },
   ipAddress: {
     type: String,
