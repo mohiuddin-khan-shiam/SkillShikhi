@@ -1,279 +1,163 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+function ReportModalHeader({ userName, onClose }) {
+  return (
+    <div className="d-flex justify-content-between align-items-center p-3 bg-danger text-white rounded-top">
+      <h5 className="modal-title fw-semibold mb-0">Report User: {userName}</h5>
+      <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Close"></button>
+    </div>
+  );
+}
+
+function ReportSuccessMessage() {
+  return (
+    <div className="p-4 text-center text-success fw-medium">
+      <p>Report submitted successfully. Thank you for helping keep our community safe.</p>
+    </div>
+  );
+}
+
+function ReportErrorMessage({ message }) {
+  return (
+    <p className="text-danger mb-3 fw-medium">{message}</p>
+  );
+}
+
+function ReportForm({
+  reason,
+  setReason,
+  details,
+  setDetails,
+  isSubmitting,
+  handleSubmit,
+  submitError,
+  onClose
+}) {
+  return (
+    <form onSubmit={handleSubmit} className="p-4">
+      <div className="mb-3">
+        <label htmlFor="reason" className="form-label fw-semibold">Reason for Report</label>
+        <select
+          id="reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          required
+          className="form-select"
+        >
+          <option value="">Select a reason</option>
+          <option value="inappropriate_content">Inappropriate Content</option>
+          <option value="harassment">Harassment</option>
+          <option value="spam">Spam</option>
+          <option value="false_information">False Information</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label htmlFor="details" className="form-label fw-semibold">Details</label>
+        <textarea
+          id="details"
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+          placeholder="Please provide specific details about the issue..."
+          required
+          rows={4}
+          className="form-control"
+        />
+      </div>
+      {submitError && <ReportErrorMessage message={submitError} />}
+      <div className="d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="btn btn-danger"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Report'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 const ReportModal = ({ isOpen, onClose, userId, userName }) => {
-    const [reportReason, setReportReason] = useState('');
-    const [reportDetails, setReportDetails] = useState('');
-    const [reportSubmitting, setReportSubmitting] = useState(false);
-    const [reportSuccess, setReportSuccess] = useState(false);
-    
-    // Use useEffect for cleanup when modal closes
-    useEffect(() => {
-        // Reset form when modal is closed
-        if (!isOpen) {
-            setReportSuccess(false);
-            setReportReason('');
-            setReportDetails('');
-        }
-        
-        // Prevent body scrolling when modal is open
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        
-        // Cleanup function
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
+  const [reason, setReason] = useState('');
+  const [details, setDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-    // Function to handle report submission
-    const handleReportSubmit = async (e) => {
-        e.preventDefault();
-        
-        if (!reportReason) {
-            alert('Please select a reason for your report');
-            return;
-        }
-        
-        setReportSubmitting(true);
-        
-        try {
-            // Get token from localStorage
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
-                alert('You must be logged in to submit a report');
-                setReportSubmitting(false);
-                return;
-            }
-            
-            // Submit report to API
-            const response = await fetch('/api/reports', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    reportedUserId: userId,
-                    reason: reportReason,
-                    details: reportDetails
-                })
-            });
-            
-            if (response.ok) {
-                setReportSuccess(true);
-                // Reset form after 3 seconds
-                setTimeout(() => {
-                    onClose();
-                    setReportSuccess(false);
-                    setReportReason('');
-                    setReportDetails('');
-                }, 3000);
-            } else {
-                const errorData = await response.json();
-                alert(`Error submitting report: ${errorData.message || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Error submitting report:', error);
-            alert('An error occurred while submitting your report. Please try again.');
-        } finally {
-            setReportSubmitting(false);
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError('');
 
-    if (!isOpen) return null;
+    try {
+      const response = await fetch('/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportedUserId: userId,
+          reason,
+          details
+        }),
+      });
 
-    return (
-        <div className="report-modal-overlay">
-            <div className="report-modal">
-                <div className="report-modal-header">
-                    <h3>Report User: {userName}</h3>
-                    <button 
-                        className="close-modal-button"
-                        onClick={() => {
-                            onClose();
-                            setReportSuccess(false);
-                            setReportReason('');
-                            setReportDetails('');
-                        }}
-                    >
-                        &times;
-                    </button>
-                </div>
-                
-                <div className="report-modal-content">
-                    {reportSuccess ? (
-                        <div className="report-success">
-                            <div className="success-icon">✓</div>
-                            <h4>Report Submitted Successfully</h4>
-                            <p>Thank you for helping keep our community safe. Our team will review this report.</p>
-                        </div>
-                    ) : (
-                        <form className="report-form" onSubmit={handleReportSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="report-reason">Reason for Report *</label>
-                                <select 
-                                    id="report-reason"
-                                    value={reportReason}
-                                    onChange={(e) => setReportReason(e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select a reason</option>
-                                    <option value="inappropriate_content">Inappropriate Content</option>
-                                    <option value="harassment">Harassment or Bullying</option>
-                                    <option value="spam">Spam or Misleading</option>
-                                    <option value="impersonation">Impersonation</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            
-                            <div className="form-group">
-                                <label htmlFor="report-details">Additional Details (Optional)</label>
-                                <textarea
-                                    id="report-details"
-                                    value={reportDetails}
-                                    onChange={(e) => setReportDetails(e.target.value)}
-                                    placeholder="Please provide any additional details that will help us understand the issue."
-                                    rows={4}
-                                ></textarea>
-                            </div>
-                            
-                            <button 
-                                type="submit" 
-                                className="submit-report-button"
-                                disabled={reportSubmitting}
-                            >
-                                {reportSubmitting ? 'Submitting...' : 'Submit Report'}
-                            </button>
-                        </form>
-                    )}
-                </div>
-            </div>
+      const data = await response.json();
 
-            <style jsx>{`
-                .report-modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 1000;
-                }
-                
-                .report-modal {
-                    background-color: white;
-                    border-radius: 8px;
-                    width: 90%;
-                    max-width: 500px;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                }
-                
-                .report-modal-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-                
-                .report-modal-header h3 {
-                    margin: 0;
-                    font-size: 18px;
-                    color: #1f2937;
-                }
-                
-                .close-modal-button {
-                    background: none;
-                    border: none;
-                    font-size: 24px;
-                    cursor: pointer;
-                    color: #6b7280;
-                }
-                
-                .report-modal-content {
-                    padding: 0;
-                }
-                
-                .form-group {
-                    margin-bottom: 16px;
-                }
-                
-                .form-group label {
-                    display: block;
-                    margin-bottom: 8px;
-                    font-weight: 500;
-                    color: #374151;
-                }
-                
-                .form-group select,
-                .form-group textarea {
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #d1d5db;
-                    border-radius: 6px;
-                    font-size: 14px;
-                }
-                
-                .form-group textarea {
-                    resize: vertical;
-                }
-                
-                .report-form {
-                    padding: 20px;
-                }
-                
-                .report-success {
-                    padding: 30px 20px;
-                    text-align: center;
-                }
-                
-                .success-icon {
-                    font-size: 48px;
-                    color: #10b981;
-                    margin-bottom: 16px;
-                }
-                
-                .report-success h4 {
-                    margin: 0 0 10px 0;
-                    color: #1f2937;
-                    font-size: 18px;
-                }
-                
-                .report-success p {
-                    color: #6b7280;
-                    margin: 0;
-                }
-                
-                .submit-report-button {
-                    background-color: #ef4444;
-                    color: white;
-                    border: none;
-                    padding: 10px 16px;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    width: 100%;
-                    margin-top: 16px;
-                }
-                
-                .submit-report-button:disabled {
-                    background-color: #f87171;
-                    cursor: not-allowed;
-                }
-            `}</style>
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit report');
+      }
+
+      setSubmitSuccess(true);
+      setReason('');
+      setDetails('');
+      setTimeout(() => {
+        onClose();
+        setSubmitSuccess(false);
+      }, 2000);
+    } catch (error) {
+      setSubmitError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal fade show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)'}} tabIndex="-1" role="dialog">
+      <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal-content shadow rounded-3">
+          <ReportModalHeader userName={userName} onClose={onClose} />
+          {submitSuccess ? (
+            <ReportSuccessMessage />
+          ) : (
+            <ReportForm
+              reason={reason}
+              setReason={setReason}
+              details={details}
+              setDetails={setDetails}
+              isSubmitting={isSubmitting}
+              handleSubmit={handleSubmit}
+              submitError={submitError}
+              onClose={onClose}
+            />
+          )}
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default ReportModal;
