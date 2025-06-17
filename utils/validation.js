@@ -31,14 +31,6 @@ export function validatePassword(password) {
     };
   }
   
-  // Check for at least one special character
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    return {
-      isValid: false,
-      message: 'Password must contain at least one special character'
-    };
-  }
-  
   return {
     isValid: true,
     message: 'Password is valid'

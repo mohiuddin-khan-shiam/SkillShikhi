@@ -5,10 +5,9 @@ export const runtime = 'nodejs';
 import dotenv from 'dotenv';
 dotenv.config();
 console.log('🚨 LOGIN ROUTE IS RUNNING');
-console.log('🔐 JWT_SECRET (login):', process.env.JWT_SECRET);
 
 import { NextResponse } from 'next/server';
-import { login } from '../../../controllers/auth/authController';
+import { login } from '../../../controllers/auth/loginController';
 import { successResponse, errorResponse, handleControllerResponse } from '../../../utils/apiResponse';
 
 export async function POST(request) {
