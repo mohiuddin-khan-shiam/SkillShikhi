@@ -1,0 +1,17 @@
+# Allow all web crawlers to crawl the site
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://skillshikhi.vercel.app/sitemap.xml
+
+# Disallow crawling of admin and API routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /_error
+Disallow: /404
+Disallow: /500
+
+# Crawl-delay for aggressive crawlers
+Crawl-delay: 10
