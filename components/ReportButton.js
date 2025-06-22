@@ -12,7 +12,7 @@ const ReportButton = ({ userId, userName }) => {
     return (
         <>
             <button 
-                className="btn btn-danger d-flex align-items-center gap-2"
+                className="report-button"
                 onClick={() => setReportModalOpen(true)}
             >
                 🚩 Report to Admin
@@ -24,6 +24,26 @@ const ReportButton = ({ userId, userName }) => {
                 userId={userId} 
                 userName={userName} 
             />
+
+            <style jsx>{`
+                .report-button {
+                    background-color: #f87171;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                
+                .report-button:hover {
+                    background-color: #ef4444;
+                }
+            `}</style>
         </>
     );
 };

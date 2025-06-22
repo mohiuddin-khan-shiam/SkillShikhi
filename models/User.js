@@ -1,8 +1,84 @@
 // models/User.js
 import mongoose from 'mongoose';
-import NotificationSchema from './NotificationSchema';
-import MasteredSkillSchema from './MasteredSkillSchema';
-import TeachingRequestSchema from './TeachingRequestSchema';
+
+const NotificationSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['friend_request', 'friend_accepted', 'system', 'unfriend', 'friend_rejected', 'message', 'teaching_request'],
+    required: true
+  },
+  fromUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  message: {
+    type: String,
+    required: true
+  },
+  read: {
+    type: Boolean,
+    default: false
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Schema for skills the user has mastered and can teach others
+const MasteredSkillSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  experienceYears: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Schema for teaching appointment requests
+const TeachingRequestSchema = new mongoose.Schema({
+  skill: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  fromUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  message: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  preferredDate: {
+    type: Date
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'rejected', 'completed'],
+    default: 'pending'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -21,14 +97,6 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-  },
-
-  resetPasswordToken: {
-    type: String,
-  },
-
-  resetPasswordExpires: {
-    type: Date,
   },
 
   bio: {

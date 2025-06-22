@@ -1,5 +1,0 @@
-This file is a placeholder for a profile image. In a production environment, this would be a real PNG file.
-
-For our demo purposes, we'll need to rely on placeholder image services or properly uploaded images.
-
-In a production app, this file would be replaced with an actual PNG image.

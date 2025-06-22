@@ -1,6 +1,5 @@
 // app/api/register/route.js
-import { register } from '../../../controllers/auth/registerController';
-import { successResponse, errorResponse, handleControllerResponse } from '../../../utils/apiResponse';
+import { register } from '../../../controllers/auth/authController';
 
 export async function POST(request) {
   try {
@@ -10,10 +9,16 @@ export async function POST(request) {
     // Call the register controller function
     const result = await register(userData);
     
-    // Return standardized response using the utility function
-    return handleControllerResponse(result);
+    // Return the appropriate response based on the controller result
+    return Response.json(
+      {
+        message: result.message,
+        ...(result.success ? { user: result.user } : {})
+      }, 
+      { status: result.status }
+    );
   } catch (error) {
-    console.error('Unexpected registration error:', error);
-    return errorResponse('Internal Server Error', 500);
+    console.error(error);
+    return Response.json({ message: 'Something went wrong' }, { status: 500 });
   }
 }

@@ -1,3 +1,0 @@
-This is a placeholder for profile images. In a production environment, you would have actual user profile images stored here or on a cloud storage service like Cloudinary.
-
-For the dummy data, we're using references to these images, but they wouldn't actually exist in the repository.

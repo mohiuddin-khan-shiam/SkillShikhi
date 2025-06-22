@@ -10,13 +10,10 @@
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "cleanwin": "if exist .next rd /s /q .next && if exist node_modules\\.cache rd /s /q node_modules\\.cache",
     "dev:clean": "npm run cleanwin && next dev",
-    "make-admin": "node -e \"import('./scripts/make-admin-commonjs.js').then(m => m.default())\"",
-    "seed-data": "node ./scripts/seed-data-commonjs.js"
+    "make-admin": "node -e \"import('./scripts/make-admin-commonjs.js').then(m => m.default())\""
   },
   "dependencies": {
-    "autoprefixer": "^10.4.21",
     "bcryptjs": "^3.0.2",
-    "bootstrap": "^5.3.6",
     "cloudinary": "^2.6.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
@@ -34,7 +31,11 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.1.3",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9",
-    "eslint-config-next": "15.3.0"
+    "eslint-config-next": "15.3.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.3"
   }
 }
