@@ -31,192 +31,180 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/', label: 'Overview', icon: '🏠' },
-    { href: '/feed', label: 'Feed', icon: '📰', badge: 'FB / Threads' },
-    { href: '/reels', label: 'Reels', icon: '⚡', badge: 'TikTok / IG' },
-    { href: '/pins', label: 'Pins', icon: '📌', badge: 'Pinterest' },
-    { href: '/community', label: 'Communities', icon: '💬', badge: 'Reddit' },
-    { href: '/droplets', label: 'Droplets', icon: '🚀', badge: 'X' },
-    { href: '/sessions', label: 'Classroom', icon: '📅', badge: 'YouTube' },
-    { href: '/chat', label: 'Chat', icon: '💬', badge: 'WhatsApp' },
-    { href: '/skills', label: 'Skills', icon: '🎓', badge: 'LinkedIn' },
-    { href: '/admin/dashboard', label: 'Admin Hub', icon: '🛡️', badge: 'Recruiter' },
+    { href: '/feed', label: 'Feed', icon: '📰' },
+    { href: '/reels', label: 'Reels', icon: '⚡' },
+    { href: '/pins', label: 'Blueprints', icon: '📌' },
+    { href: '/community', label: 'Communities', icon: '💬' },
+    { href: '/droplets', label: 'Droplets', icon: '🚀' },
+    { href: '/sessions', label: 'Classroom', icon: '📅' },
+    { href: '/chat', label: 'Study Pods', icon: '💬' },
+    { href: '/skills', label: 'Skills', icon: '🎓' },
+    { href: '/admin/dashboard', label: 'Admin Hub', icon: '🛡️' },
   ];
 
   return (
-    <>
-      {/* Top Recruiter Showcase Ribbon */}
-      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-indigo-100 text-xs py-2 px-4 border-b border-indigo-800/60 sticky top-0 z-50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="font-medium text-slate-200">
-              <strong className="text-white">Recruiter Showcase Mode:</strong> All 14 social learning features & admin dashboards are open for review.
-            </span>
+    <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div
+                className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white font-bold text-base shadow-sm shadow-indigo-200 group-hover:scale-105 transition-transform"
+                style={{ width: '36px', height: '36px' }}
+              >
+                SS
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-700 via-indigo-800 to-violet-800 bg-clip-text text-transparent">
+                  SkillShikhi
+                </span>
+                <span className="hidden md:inline-block text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                  Social Learning
+                </span>
+              </div>
+            </Link>
           </div>
 
+          {/* Desktop Navigation Links */}
+          <div className="hidden xl:flex items-center gap-1">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                    isActive
+                      ? 'bg-indigo-50 text-indigo-700 font-bold shadow-2xs'
+                      : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-sm">{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Right Action: Demo Switcher & Profile */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-indigo-300 hidden sm:inline">Active Persona:</span>
+            {/* Interactive Demo Persona Switcher */}
             <div className="relative">
               <button
                 onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-                className="bg-indigo-600/60 hover:bg-indigo-600 text-white font-semibold text-xs px-3 py-1 rounded-full flex items-center gap-1.5 border border-indigo-400/40 transition"
+                className="bg-slate-100 hover:bg-indigo-50 text-slate-800 hover:text-indigo-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5 transition shadow-2xs"
+                title="Switch Demo Role"
               >
-                <span>{currentUser.isAdmin ? '🛡️' : currentUser.role?.includes('Mentor') ? '🎓' : '🎒'}</span>
-                <span>{currentUser.name}</span>
-                <span className="text-[10px] opacity-75">▼</span>
+                <span className="text-xs">
+                  {currentUser.isAdmin ? '🛡️' : currentUser.role?.includes('Mentor') ? '🎓' : '🎒'}
+                </span>
+                <span className="hidden sm:inline font-medium text-slate-500">Demo Role:</span>
+                <span className="font-bold text-slate-800">{currentUser.name.split(' ')[0]}</span>
+                <span className="text-[10px] text-slate-400">▼</span>
               </button>
 
               {roleMenuOpen && (
-                <div className="absolute right-0 mt-1 w-60 bg-white text-gray-900 rounded-xl shadow-2xl border border-gray-100 py-1.5 z-50 text-xs">
-                  <div className="px-3 py-1.5 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    Switch Recruiter Persona
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 text-xs animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-1.5 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Interactive Demo Roles
                   </div>
                   <button
                     onClick={() => handleRoleSelect('learner')}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-50 transition ${currentUser.username === 'alexriver' ? 'bg-indigo-50/70 font-semibold text-indigo-700' : ''}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-50 transition ${
+                      currentUser.username === 'alexriver' ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
+                    }`}
                   >
-                    <span className="text-base">🎒</span>
+                    <span className="text-lg">🎒</span>
                     <div>
-                      <div className="font-medium">Alex River (Learner)</div>
-                      <div className="text-[10px] text-gray-500">Learning Next.js, code feeds, reels</div>
+                      <div className="font-semibold">Alex River (Learner)</div>
+                      <div className="text-[10px] text-slate-500">Explore feeds, watch reels, save pins</div>
                     </div>
                   </button>
                   <button
                     onClick={() => handleRoleSelect('mentor')}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-emerald-50 transition ${currentUser.username === 'sarahkhan_ai' ? 'bg-emerald-50/70 font-semibold text-emerald-700' : ''}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-emerald-50 transition ${
+                      currentUser.username === 'sarahkhan_ai' ? 'bg-emerald-50/70 font-semibold text-emerald-700' : 'text-slate-700'
+                    }`}
                   >
-                    <span className="text-base">🎓</span>
+                    <span className="text-lg">🎓</span>
                     <div>
-                      <div className="font-medium">Dr. Sarah Khan (Mentor)</div>
-                      <div className="text-[10px] text-gray-500">AI Researcher, conducts sessions</div>
+                      <div className="font-semibold">Dr. Sarah Khan (Mentor)</div>
+                      <div className="text-[10px] text-slate-500">Conducts AI workshops, verifies Q&A</div>
                     </div>
                   </button>
                   <button
                     onClick={() => handleRoleSelect('admin')}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-slate-100 transition ${currentUser.isAdmin ? 'bg-slate-100 font-semibold text-slate-800' : ''}`}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-violet-50 transition ${
+                      currentUser.isAdmin ? 'bg-violet-50/70 font-semibold text-violet-700' : 'text-slate-700'
+                    }`}
                   >
-                    <span className="text-base">🛡️</span>
+                    <span className="text-lg">🛡️</span>
                     <div>
-                      <div className="font-medium">Shiam (Admin Lead)</div>
-                      <div className="text-[10px] text-gray-500">Full platform analytics & moderation</div>
+                      <div className="font-semibold">Shiam (Admin Lead)</div>
+                      <div className="text-[10px] text-slate-500">Live analytics, reports & moderation</div>
                     </div>
                   </button>
                 </div>
               )}
             </div>
+
+            {/* Profile Avatar Pill */}
+            <Link
+              href="/profile"
+              className={`flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-full border transition ${
+                pathname === '/profile'
+                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                  : 'border-slate-200 hover:border-indigo-300 bg-white text-slate-700'
+              }`}
+            >
+              <img
+                src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                alt={currentUser.name}
+                className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                style={{ width: '28px', height: '28px' }}
+              />
+              <span className="text-xs font-semibold hidden md:inline">{currentUser.name}</span>
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="xl:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
+              aria-label="Toggle Menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Navbar */}
-      <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-9 z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-indigo-200">
-                  SS
-                </div>
-                <div>
-                  <span className="font-black text-lg tracking-tight bg-gradient-to-r from-indigo-700 to-violet-700 bg-clip-text text-transparent">
-                    SkillShikhi
-                  </span>
-                  <span className="hidden md:inline-block ml-2 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                    Social Learning
-                  </span>
-                </div>
-              </Link>
-            </div>
-
-            {/* Desktop Navigation Links */}
-            <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-                      isActive
-                        ? 'bg-indigo-50 text-indigo-700 shadow-2xs'
-                        : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{link.icon}</span>
-                    <span>{link.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Right Action Icons */}
-            <div className="flex items-center gap-2">
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="xl:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-1 shadow-lg">
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {navLinks.map((link) => (
               <Link
-                href="/profile"
-                className={`flex items-center gap-2 pl-2 pr-3 py-1 rounded-full border transition ${
-                  pathname === '/profile'
-                    ? 'border-indigo-500 bg-indigo-50/60 text-indigo-700'
-                    : 'border-slate-200 hover:border-indigo-300 bg-white text-slate-700'
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition ${
+                  pathname === link.href ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <img
-                  src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                  alt={currentUser.name}
-                  className="w-7 h-7 rounded-full object-cover border border-indigo-200"
-                />
-                <span className="text-xs font-semibold hidden sm:inline">Profile</span>
+                <span>{link.icon}</span>
+                <span>{link.label}</span>
               </Link>
-
-              {/* Mobile hamburger */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition"
-                aria-label="Toggle Menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {mobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
+            ))}
           </div>
         </div>
-
-        {/* Mobile Dropdown Navigation */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-1 shadow-lg">
-            <div className="grid grid-cols-2 gap-1.5 py-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between ${
-                    pathname === link.href ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span>{link.icon}</span>
-                    <span>{link.label}</span>
-                  </span>
-                  {link.badge && (
-                    <span className="text-[9px] opacity-75">
-                      {link.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </nav>
-    </>
+      )}
+    </nav>
   );
 }

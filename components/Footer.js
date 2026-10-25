@@ -14,13 +14,16 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-slate-900 text-slate-300 pt-16 pb-12 border-t border-slate-800">
+    <footer className="bg-slate-950 text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
           {/* Brand Col */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+              <div
+                className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm"
+                style={{ width: '32px', height: '32px' }}
+              >
                 SS
               </div>
               <span className="font-extrabold text-xl text-white tracking-tight">SkillShikhi</span>
@@ -31,7 +34,7 @@ export default function Footer() {
             <div className="pt-2">
               <span className="inline-flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-3 py-1.5 rounded-full">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Vercel Free-Tier & Serverless Optimized
+                Serverless & Cloud Optimized
               </span>
             </div>
           </div>
@@ -46,7 +49,7 @@ export default function Footer() {
                 <Link
                   key={idx}
                   href={p.href}
-                  className="p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-800/80 hover:border-indigo-500/50 transition group"
+                  className="p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800/80 border border-slate-800 hover:border-indigo-500/50 transition group"
                 >
                   <div className="font-semibold text-slate-200 group-hover:text-indigo-300 transition">
                     {p.name}
@@ -57,17 +60,17 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Recruiter & Tech Stack Info */}
+          {/* Tech Stack Info */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-              Recruiter & Tech Spec
+              Architecture & Tech Stack
             </h4>
             <ul className="text-xs space-y-2 text-slate-400">
               <li>⚡ <strong>Next.js 15:</strong> App Router architecture</li>
-              <li>⚛️ <strong>React 19:</strong> Modern hooks & client hydration</li>
-              <li>🛡️ <strong>Resilient Fallback:</strong> Zero 500 crashes</li>
-              <li>📁 <strong>Ephemeral Safe:</strong> No server file write traps</li>
-              <li>🎨 <strong>Tailwind & CSS:</strong> Glassmorphism SaaS UI</li>
+              <li>⚛️ <strong>React 19:</strong> Client & Server Components</li>
+              <li>🛡️ <strong>Resilient Fallback:</strong> Zero 500 downtime</li>
+              <li>📁 <strong>Ephemeral Safe:</strong> Client sync & localStorage</li>
+              <li>🎨 <strong>Modern UI:</strong> Glassmorphism & Micro-animations</li>
             </ul>
 
             <div className="pt-3">
@@ -77,7 +80,7 @@ export default function Footer() {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 text-xs text-indigo-300 hover:text-white bg-indigo-950/80 border border-indigo-700/60 px-3 py-1.5 rounded-lg transition"
               >
-                <span>⭐ GitHub Repository</span>
+                <span>⭐ View on GitHub</span>
                 <span>↗</span>
               </a>
             </div>
@@ -87,14 +90,14 @@ export default function Footer() {
         {/* Bottom Credits */}
         <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            Built with passion by <strong>S. M. Mohiuddin Khan Shiam</strong> for recruiter showcase.
+            Built with passion by <strong>S. M. Mohiuddin Khan Shiam</strong> · SkillShikhi Platform.
           </div>
           <div className="flex items-center gap-4">
             <Link href="/admin/dashboard" className="text-indigo-400 hover:underline">
               Admin Hub
             </Link>
             <Link href="/login" className="hover:text-slate-300">
-              Member Sign In
+              Sign In
             </Link>
             <Link href="/feed" className="hover:text-slate-300">
               Live Feed

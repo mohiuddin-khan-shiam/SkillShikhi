@@ -69,10 +69,10 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        {/* Recruiter Showcase Header Pill */}
+        {/* Fast-Track Demo Header Pill */}
         <div className="recruiter-pill">
           <span className="pulse-dot"></span>
-          <span>Recruiter / Portfolio Showcase Mode</span>
+          <span>⚡ Fast-Track Demo Access</span>
         </div>
 
         <div className="login-logo text-center">
@@ -168,7 +168,7 @@ export default function LoginPage() {
             href="/admin-login"
             className="w-full block text-center py-2 px-4 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-lg text-xs font-medium transition"
           >
-            🛡️ Recruiter Admin Dashboard Login
+            🛡️ Lead Admin Portal
           </Link>
 
           <div className="login-footer mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-500">

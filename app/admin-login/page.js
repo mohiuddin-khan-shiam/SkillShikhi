@@ -63,10 +63,10 @@ export default function AdminLoginPage() {
   return (
     <div className="admin-login-wrapper">
       <div className="admin-login-box">
-        {/* Recruiter Quick Mode Banner */}
+        {/* Quick Mode Banner */}
         <div className="recruiter-pill-banner">
           <span className="badge-pulse"></span>
-          <span>Recruiter & Reviewer Showcase Mode</span>
+          <span>Lead Administrator Portal</span>
         </div>
 
         <div className="login-logo text-center">
@@ -85,7 +85,7 @@ export default function AdminLoginPage() {
         >
           <span>⚡</span>
           <div>
-            <div className="font-semibold text-sm">Instant Recruiter Access</div>
+            <div className="font-semibold text-sm">Instant Demo Admin Login</div>
             <div className="text-xs text-indigo-200">1-click login with full moderation privileges</div>
           </div>
         </button>

@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>
-            <strong>Recruiter & Reviewer Showcase Mode:</strong> Full administrative privileges, user moderation, and system analytics unlocked.
+            <strong>Lead Administrator Mode:</strong> Live platform telemetry, user moderation, and system analytics active.
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="admin-user-info">
-            <span className="admin-welcome">Welcome, Shiam (Recruiter Demo)</span>
+            <span className="admin-welcome">Welcome, Shiam (Platform Lead)</span>
             <button onClick={handleLogout} className="admin-logout-btn">
               Sign Out
             </button>

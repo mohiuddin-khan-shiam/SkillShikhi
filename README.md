@@ -1,70 +1,84 @@
-# SkillShikhi — Social Media Meets Peer Skill Sharing
+# SkillShikhi — The Collaborative Social Learning Ecosystem
 
-[![Next.js 15](https://img.shields.io/badge/Next.js-15.3.0-black?logo=next.js)](https://nextjs.org/)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15.5.28-black?logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.0.0-61dafb?logo=react)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8?logo=tailwind-css)](https://tailwindcss.com/)
 [![Deployment](https://img.shields.io/badge/Vercel-Live-success?logo=vercel)](https://skill-shikhi.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Live Demo:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)  
-> **Author & Developer:** [S. M. Mohiuddin Khan Shiam](https://github.com/mohiuddin-khan-shiam)
+> **Live Application:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)  
+> **Author & Lead Developer:** [S. M. Mohiuddin Khan Shiam](https://github.com/mohiuddin-khan-shiam)
 
 ---
 
-## 🌟 The Vision: "SkillShikhi"
-*Shikhi* (শিখি) signifies **"learning"** in Bengali. **SkillShikhi** is a platform created to combine the engagement mechanics of **14 major social media platforms**—re-engineered exclusively for collaborative skill sharing, technical mentorship, and peer learning:
+## 🌟 Overview: What is SkillShikhi?
 
-| Social Platform | SkillShikhi Learning Adaptation | Route |
+*Shikhi* (শিখি) is the Bengali word for **"learning"**. **SkillShikhi** is a modern technical education platform that merges the engagement dynamics of **14 major social networks** into a unified, distraction-free environment built exclusively for peer-to-peer knowledge sharing and mentorship:
+
+| Platform Synergy | SkillShikhi Learning Paradigm | Route |
 |---|---|---|
-| **Facebook & Threads** | Rich skill feeds, technical discussions, code walk-throughs & reactions | `/feed` |
-| **LinkedIn** | Mastered skills directory, peer endorsements, verified mentor credentials | `/skills` |
-| **YouTube & Classroom** | Virtual classrooms, live peer tutoring workshops, and calendar bookings | `/sessions` |
-| **TikTok & Instagram** | 60-second vertical micro-lessons ("Skill Reels") with key takeaways | `/reels` |
-| **WhatsApp & Telegram** | Real-time peer study pods, 1-on-1 direct messaging, and presence | `/chat` |
-| **Reddit** | Sub-Shikhi communities (`s/webdev`, `s/ai-ml`), upvoting & verified answers | `/community` |
-| **Pinterest** | Architecture blueprints, design tokens, and technical cheat sheet pinboards | `/pins` |
+| **Facebook & Threads** | Rich technical feeds, interactive updates, code walk-throughs & reactions | `/feed` |
+| **LinkedIn** | Mastered skills directory, peer endorsements, and verified credentials | `/skills` |
+| **YouTube & Classroom** | Live peer workshops, virtual classrooms, and calendar bookings | `/sessions` |
+| **TikTok & Instagram** | 60-second vertical micro-lessons ("Skill Reels") with core takeaways | `/reels` |
+| **WhatsApp & Telegram** | Real-time study pods, direct peer messaging, and presence indicators | `/chat` |
+| **Reddit** | Sub-Shikhi communities (`s/webdev`, `s/ai-ml`), voting & verified answers | `/community` |
+| **Pinterest** | Architecture blueprints, design tokens, and technical cheat sheets | `/pins` |
 | **X (Twitter)** | 280-character Code Droplets, terminal one-liners, and rapid tips | `/droplets` |
-| **Snapchat** | 24-hour daily learning streaks and 100-Days-of-Code progress snaps | `/feed` |
-| **Messenger** | Instant teaching request dispatch and session confirmation notifications | `/teaching` |
+| **Snapchat** | 24-hour daily learning streaks and daily check-in stories | `/feed` |
+| **Messenger** | Instant mentorship requests and peer collaboration notifications | `/teaching` |
 
 ---
 
-## 🎯 Recruiter & Reviewer Fast-Track
-To evaluate the platform, recruiters do **not** need to create database credentials or sign up:
-1. **Interactive Showcase Navigation:** The top header includes an instant **Persona Switcher** allowing you to switch between:
-   - 🎒 **Alex River (Learner):** Explores feeds, watches reels, pins cheat sheets, books sessions.
-   - 🎓 **Dr. Sarah Khan (Mentor):** Conducts PyTorch workshops, verifies community answers.
-   - 🛡️ **Shiam (Admin Lead):** Full admin dashboard with user moderation, reports, and system telemetry.
-2. **Instant Demo Logins:** Both [`/login`](https://skill-shikhi.vercel.app/login) and [`/admin-login`](https://skill-shikhi.vercel.app/admin-login) feature 1-click demo entry buttons.
-3. **Admin Dashboard:** Access [`/admin/dashboard`](https://skill-shikhi.vercel.app/admin/dashboard) directly to inspect platform analytics, content moderation, user management, and session monitoring.
+## ✨ Key Features & Interactive Roles
+
+SkillShikhi supports multi-persona role switching directly from the top navigation bar to explore diverse user experiences:
+
+- 🎒 **Learner View (Alex River):** Browse real-time technical feeds, watch 60-second skill reels, bookmark architecture cheat sheets, reserve seats in live workshops, and chat in study pods.
+- 🎓 **Mentor View (Dr. Sarah Khan):** Host PyTorch and AI workshops, endorse peer skills, verify technical answers in community forums, and guide junior developers.
+- 🛡️ **Admin Hub (Shiam):** Monitor platform telemetry, inspect real-time user activity logs, review moderation flags, manage community topics, and oversee scheduled classroom sessions.
 
 ---
 
-## 🛡️ Vercel Free-Tier & Serverless Architecture
+## 🛡️ Cloud & Serverless Architecture
 
-When deploying full-stack Next.js applications to free serverless tiers (like Vercel), two common constraints arise:
-1. **Ephemeral Read-Only Filesystem:** Serverless functions cannot write files to local disk (`fs.writeFile` to `public/` causes `EROFS` errors or data vanishes on lambda recycle).
-2. **Database Inactivity Timeouts:** Free MongoDB Atlas (M0) clusters frequently pause after periods of inactivity, causing connection drops (`ECONNREFUSED`).
+SkillShikhi is architected for zero-downtime operation across modern serverless platforms:
 
-### How SkillShikhi Solves This:
-- **Resilient Fallback Data Layer:** Every API endpoint (`/api/posts`, `/api/skills`, `/api/sessions`, `/api/admin/*`) implements an automatic fallback layer. If a MongoDB cluster is asleep, paused, or unreachable, the endpoints gracefully serve high-fidelity mock data rather than crashing with a 500 error.
-- **Client-Side Hybrid Hydration:** File uploads (post images, avatar photos, pinboards) are handled via client-side Base64 object URLs and synchronized to `localStorage`. User actions (new posts, likes, bookmarks, session reservations) persist interactively throughout the browser session without writing files to the server.
-- **Vercel Optimized Builds:** Duplicate configuration files have been cleaned up and fatal `process.exit(1)` checks removed from `next.config.js`, ensuring 100% build pass rates on Vercel deployments.
+```mermaid
+flowchart TD
+    Client["Client Browser\n(Next.js App Router + React 19)"]
+    API["Serverless Edge & API Handlers\n(/api/posts, /api/skills, /api/admin/*)"]
+    Fallback["Resilient Fallback Data Layer\n(Zero-Downtime Guarantee)"]
+    MongoDB[("MongoDB Atlas\n(M0 Serverless Cluster)")]
+    Store["Client State Engine\n(Optimistic UI + LocalStorage)"]
+
+    Client -->|API Requests| API
+    Client -->|User Interactions| Store
+    API -->|Attempt Connection| MongoDB
+    MongoDB -.->|Timeout / Sleeping Cluster| Fallback
+    Fallback -->|High-Fidelity Mock Data| API
+    API -->|JSON Response| Client
+```
+
+### Architectural Highlights:
+1. **Resilient Fallback Layer:** External databases on free cloud tiers may enter sleep mode. Every API endpoint in SkillShikhi implements an automatic graceful fallback, guaranteeing zero 500 crashes and seamless data flow even if the remote database is unreachable.
+2. **Ephemeral-Safe Media Sync:** Serverless runtimes are strictly read-only (`EROFS`-safe). User uploads (posts, images, cheat sheets) are handled client-side via Base64 and synchronized through `localStorage`, persisting user edits across sessions without fragile server-side disk writes.
+3. **Next.js 15 & React 19:** Built with modern React Server Components, server actions, dynamic metadata generation, and zero legacy bloat.
 
 ---
 
-## 🛠️ Tech Stack & Dependencies
+## 🛠️ Tech Stack
 
-- **Framework:** [Next.js 15.3.0](https://nextjs.org/) (App Router, Server & Client Components)
+- **Framework:** [Next.js 15.5.28](https://nextjs.org/) (App Router, Server & Client Components)
 - **Library:** [React 19.0.0](https://react.dev/)
-- **Styling:** PostCSS, Tailwind CSS v4 conventions & custom Glassmorphic design system
-- **Database & ODM:** MongoDB & Mongoose 8.13.2 (with resilient offline fallback)
+- **Styling:** Tailwind CSS, PostCSS & Custom Glassmorphism Design System
+- **Database & ODM:** MongoDB & Mongoose 8.13.2 (with resilient fallback handler)
 - **Authentication:** JSON Web Tokens (JWT) & bcryptjs
-- **Icons & UI:** `react-icons`, `date-fns`, `clsx`
-- **Deployment Platform:** Vercel
+- **Deployment:** Vercel Serverless Edge
 
 ---
 
-## 💻 Local Development
+## 💻 Local Development Setup
 
 1. **Clone the repository:**
    ```bash
@@ -81,6 +95,7 @@ When deploying full-stack Next.js applications to free serverless tiers (like Ve
    ```bash
    npm run dev
    ```
+   Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 4. **Build for production:**
    ```bash
@@ -89,40 +104,44 @@ When deploying full-stack Next.js applications to free serverless tiers (like Ve
 
 ---
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
 ```
 SkillShikhi/
 ├── app/
 │   ├── layout.js              # Global root layout with Navbar & Footer
-│   ├── page.js                # Master interactive recruiter showcase landing page
-│   ├── feed/                  # Facebook & Threads skill feed
-│   ├── reels/                 # TikTok & Instagram 60s micro-lessons
-│   ├── pins/                  # Pinterest architecture & cheatsheet pinboard
-│   ├── community/             # Reddit-style skill sub-communities
-│   ├── droplets/              # X (Twitter) 280-char technical tips
-│   ├── sessions/              # Classroom & mentorship scheduling calendar
-│   ├── chat/                  # WhatsApp & Telegram study pod messaging
-│   ├── skills/                # LinkedIn skill mastery & endorsement directory
-│   ├── profile/               # Learner & mentor profile portfolio
-│   ├── admin-login/           # 1-click recruiter admin authentication
-│   ├── admin/dashboard/       # Analytics, moderation, reports, and logs
-│   ├── api/                   # Resilient serverless REST API endpoints
-│   └── sitemap.js             # Native metadata sitemap
+│   ├── page.js                # Master interactive platform showcase landing page
+│   ├── feed/                  # Skill feeds & code discussions
+│   ├── reels/                 # 60s vertical skill reels player
+│   ├── pins/                  # Architecture & design pinboards
+│   ├── community/             # Sub-Shikhi technical communities
+│   ├── droplets/              # 280-char technical code droplets
+│   ├── sessions/              # Classroom & workshop scheduling calendar
+│   ├── chat/                  # Study pod direct messaging
+│   ├── skills/                # Mastered skills & endorsements directory
+│   ├── profile/               # User profiles and portfolios
+│   ├── admin/dashboard/       # Analytics, moderation, and session monitoring
+│   └── api/                   # Resilient serverless REST API endpoints
 ├── components/
-│   ├── Navbar.js              # Global navigation with Recruiter Role Switcher
-│   ├── Footer.js              # Footer with 14-platform matrix & author credits
-│   └── admin/                 # Modular admin dashboard tabs & charts
+│   ├── Navbar.js              # Header navigation & interactive role switcher
+│   ├── Footer.js              # Platform footer & architecture summary
+│   └── admin/                 # Admin dashboard tabs & telemetry widgets
 ├── lib/
-│   ├── clientStore.js         # Client-side resilient state & localStorage manager
-│   ├── demoData.js            # Comprehensive showcase data across all 14 paradigms
-│   └── mongodb.js             # Resilient connection pooler with graceful fallback
-└── controllers/               # Business logic controllers
+│   ├── clientStore.js         # Client-side resilient state & sync manager
+│   ├── demoData.js            # High-fidelity data across all 14 paradigms
+│   └── mongodb.js             # MongoDB connection pool with resilient fallback
+└── controllers/               # Modular business logic controllers
 ```
 
 ---
 
-## 👤 Author
+## 👤 Author & Credits
+
 **S. M. Mohiuddin Khan Shiam**  
 - **GitHub:** [@mohiuddin-khan-shiam](https://github.com/mohiuddin-khan-shiam)  
-- **Live Showcase:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)
+- **Live Demo:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)
+
+---
+
+## 📄 License
+This project is open-source and licensed under the [MIT License](LICENSE).
