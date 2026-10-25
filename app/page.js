@@ -18,10 +18,10 @@ import { clientStore } from '../lib/clientStore';
 export default function Home() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('feed');
-  const [posts, setPosts] = useState(DEMO_POSTS);
-  const [reels, setReels] = useState(DEMO_REELS);
-  const [pins, setPins] = useState(DEMO_PINS);
-  const [droplets, setDroplets] = useState(DEMO_DROPLETS);
+  const [posts, setPosts] = useState(DEMO_POSTS || []);
+  const [reels, setReels] = useState(DEMO_REELS || []);
+  const [pins, setPins] = useState(DEMO_PINS || []);
+  const [droplets, setDroplets] = useState(DEMO_DROPLETS || []);
   const [selectedStory, setSelectedStory] = useState(null);
 
   const handleQuickRole = (role) => {
@@ -35,12 +35,16 @@ export default function Home() {
 
   const handleLikePost = (postId) => {
     const updated = clientStore.toggleLikePost(postId);
-    setPosts(updated);
+    if (updated) {
+      setPosts(updated);
+    }
   };
 
   const handleSavePin = (pinId) => {
     const updated = clientStore.toggleSavePin(pinId);
-    setPins(updated);
+    if (updated) {
+      setPins(updated);
+    }
   };
 
   const platformPills = [
@@ -66,7 +70,7 @@ export default function Home() {
       <section className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-indigo-50/70 via-white to-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center relative z-10">
           {/* Concept Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-indigo-800 text-xs font-bold mb-6 shadow-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-100/90 border border-indigo-200 text-indigo-800 text-xs font-bold mb-6 shadow-xs">
             <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
             14 Major Social Paradigms Unified for Peer Learning
           </div>
@@ -154,51 +158,63 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Snapchat / IG Style Daily Learning Streaks */}
+      {/* 2. Daily Learning Stories (Snapchat / Instagram) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-xl">🔥</span>
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-                Daily Learning Streaks & Stories (Snapchat / Instagram)
+                Daily Learning Check-ins & Stories (Snapchat / Instagram)
               </h2>
             </div>
-            <span className="text-xs text-slate-500 hidden sm:inline">Click avatar to view today's micro-update</span>
+            <span className="text-xs text-slate-500 hidden sm:inline">Click avatar to inspect today's update</span>
           </div>
 
           <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-2 no-scrollbar">
-            {DEMO_STORIES.map((story) => (
-              <button
-                key={story.id}
-                onClick={() => setSelectedStory(story)}
-                className="flex flex-col items-center gap-2 group flex-shrink-0 focus:outline-none"
-              >
-                <div
-                  className={`p-0.5 rounded-full bg-gradient-to-tr ${
-                    story.hasUnseen ? 'from-amber-400 via-rose-500 to-indigo-600' : 'from-slate-200 to-slate-300'
-                  } group-hover:scale-105 transition-transform`}
+            {(DEMO_STORIES || []).map((story) => {
+              const authorName = story?.author?.name || story?.userName || 'Peer Member';
+              const authorAvatar = story?.author?.avatar || story?.userAvatar || story?.preview || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+              const firstName = authorName.split(' ')[0] || 'Peer';
+              const viewsCount = story?.views || 350;
+
+              return (
+                <button
+                  key={story.id}
+                  onClick={() =>
+                    setSelectedStory({
+                      ...story,
+                      authorName,
+                      authorAvatar,
+                      viewsCount,
+                      caption: story?.content || story?.title || 'Daily Progress',
+                      mediaUrl: story?.preview || story?.mediaUrl,
+                    })
+                  }
+                  className="flex flex-col items-center gap-2 group flex-shrink-0 focus:outline-none"
                 >
-                  <div className="bg-white p-0.5 rounded-full">
-                    <img
-                      src={story.userAvatar}
-                      alt={story.userName}
-                      className="w-14 h-14 rounded-full object-cover"
-                      style={{ width: '56px', height: '56px' }}
-                    />
+                  <div className="p-0.5 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-600 group-hover:scale-105 transition-transform">
+                    <div className="bg-white p-0.5 rounded-full">
+                      <img
+                        src={authorAvatar}
+                        alt={authorName}
+                        className="w-14 h-14 rounded-full object-cover"
+                        style={{ width: '56px', height: '56px' }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition truncate max-w-[70px]">
-                    {story.userName.split(' ')[0]}
+                  <div className="text-center">
+                    <div className="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition truncate max-w-[70px]">
+                      {firstName}
+                    </div>
+                    <div className="text-[10px] font-bold text-amber-600 flex items-center justify-center gap-0.5">
+                      <span>🔥</span>
+                      <span>{viewsCount} views</span>
+                    </div>
                   </div>
-                  <div className="text-[10px] font-bold text-amber-600 flex items-center justify-center gap-0.5">
-                    <span>🔥</span>
-                    <span>{story.streak}d</span>
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -211,15 +227,15 @@ export default function Home() {
             <div className="p-4 flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <img
-                  src={selectedStory.userAvatar}
-                  alt={selectedStory.userName}
+                  src={selectedStory.authorAvatar}
+                  alt={selectedStory.authorName}
                   className="w-9 h-9 rounded-full object-cover border border-amber-400"
                   style={{ width: '36px', height: '36px' }}
                 />
                 <div>
-                  <div className="text-sm font-bold">{selectedStory.userName}</div>
+                  <div className="text-sm font-bold">{selectedStory.authorName}</div>
                   <div className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-                    <span>🔥 {selectedStory.streak} Day Learning Streak</span>
+                    <span>🔥 {selectedStory.viewsCount} Community Views Today</span>
                   </div>
                 </div>
               </div>
@@ -238,13 +254,13 @@ export default function Home() {
                 alt="Story"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex flex-col justify-end p-5">
                 <p className="text-white text-base font-semibold drop-shadow-md">
                   {selectedStory.caption}
                 </p>
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-300">
                   <span className="bg-indigo-600/80 px-2 py-1 rounded text-white font-medium">
-                    Verified Daily Check-in
+                    Verified Daily Update
                   </span>
                   <span>Tap anywhere to close</span>
                 </div>
@@ -321,53 +337,66 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {posts.slice(0, 2).map((post) => (
-                  <div
-                    key={post.id}
-                    className="border border-slate-200/80 rounded-xl p-5 hover:border-indigo-200 hover:shadow-xs transition bg-slate-50/50"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <img
-                        src={post.authorAvatar}
-                        alt={post.authorName}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                        style={{ width: '40px', height: '40px' }}
-                      />
-                      <div>
-                        <div className="font-bold text-sm text-slate-900">{post.authorName}</div>
-                        <div className="text-xs text-slate-500">{post.authorHeadline}</div>
-                      </div>
-                    </div>
+                {(posts || []).slice(0, 2).map((post) => {
+                  const author = post?.author || {};
+                  const authorName = author.name || 'Developer';
+                  const authorAvatar = author.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  const authorHeadline = author.headline || 'Full Stack Engineer';
+                  const postMedia = post?.media || post?.image;
+                  const likesCount = post?.likesCount ?? post?.likes ?? 142;
+                  const isLiked = post?.isLiked ?? post?.likedByMe ?? false;
+                  const commentsCount = post?.comments?.length ?? post?.commentsCount ?? 12;
 
-                    <p className="text-sm text-slate-800 leading-relaxed mb-4">{post.content}</p>
-
-                    {post.image && (
-                      <div className="rounded-lg overflow-hidden mb-4 border border-slate-200 aspect-video bg-slate-100">
+                  return (
+                    <div
+                      key={post.id}
+                      className="border border-slate-200/80 rounded-xl p-5 hover:border-indigo-200 hover:shadow-xs transition bg-slate-50/50"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
                         <img
-                          src={post.image}
-                          alt="Post media"
-                          className="w-full h-full object-cover"
+                          src={authorAvatar}
+                          alt={authorName}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                          style={{ width: '40px', height: '40px' }}
                         />
+                        <div>
+                          <div className="font-bold text-sm text-slate-900">{authorName}</div>
+                          <div className="text-xs text-slate-500">{authorHeadline}</div>
+                        </div>
                       </div>
-                    )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
-                      <button
-                        onClick={() => handleLikePost(post.id)}
-                        className={`flex items-center gap-1.5 font-semibold transition ${
-                          post.likedByMe ? 'text-rose-600' : 'text-slate-600 hover:text-rose-600'
-                        }`}
-                      >
-                        <span>{post.likedByMe ? '❤️' : '🤍'}</span>
-                        <span>{post.likes} Likes</span>
-                      </button>
-                      <span className="text-slate-500">💬 {post.comments.length} Comments</span>
-                      <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-semibold">
-                        #{post.category}
-                      </span>
+                      <p className="text-sm text-slate-800 leading-relaxed mb-4 whitespace-pre-line">
+                        {post.content}
+                      </p>
+
+                      {postMedia && (
+                        <div className="rounded-lg overflow-hidden mb-4 border border-slate-200 aspect-video bg-slate-100">
+                          <img
+                            src={postMedia}
+                            alt="Post media"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
+                        <button
+                          onClick={() => handleLikePost(post.id)}
+                          className={`flex items-center gap-1.5 font-semibold transition ${
+                            isLiked ? 'text-rose-600' : 'text-slate-600 hover:text-rose-600'
+                          }`}
+                        >
+                          <span>{isLiked ? '❤️' : '🤍'}</span>
+                          <span>{likesCount} Likes</span>
+                        </button>
+                        <span className="text-slate-500">💬 {commentsCount} Comments</span>
+                        <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-semibold">
+                          #{post.skillTag || post.category || 'Engineering'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -394,45 +423,52 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {reels.map((reel) => (
-                  <div
-                    key={reel.id}
-                    className="relative rounded-2xl overflow-hidden aspect-[9/14] bg-slate-950 group shadow-md"
-                  >
-                    <video
-                      src={reel.videoUrl}
-                      poster={reel.thumbnail}
-                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
-                      loop
-                      muted
-                      playsInline
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40 p-4 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                          60s Reel
-                        </span>
-                        <span className="text-xs text-white/90 font-semibold">{reel.duration}</span>
-                      </div>
+                {(reels || []).map((reel) => {
+                  const author = reel?.author || {};
+                  const authorName = author.name || 'Instructor';
+                  const authorAvatar = author.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  const takeaway = reel?.tip || reel?.takeaway || 'High-efficiency micro-lesson';
 
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <img
-                            src={reel.authorAvatar}
-                            alt={reel.authorName}
-                            className="w-7 h-7 rounded-full object-cover border border-white"
-                            style={{ width: '28px', height: '28px' }}
-                          />
-                          <span className="text-xs font-bold text-white">{reel.authorName}</span>
+                  return (
+                    <div
+                      key={reel.id}
+                      className="relative rounded-2xl overflow-hidden aspect-[9/14] bg-slate-950 group shadow-md"
+                    >
+                      <video
+                        src={reel.videoUrl}
+                        poster={reel.thumbnail}
+                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
+                        loop
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/40 p-4 flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                          <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                            60s Reel
+                          </span>
+                          <span className="text-xs text-white/90 font-semibold">{reel.duration}</span>
                         </div>
-                        <h4 className="text-sm font-bold text-white leading-snug mb-1">{reel.title}</h4>
-                        <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-[11px] text-white/90 border border-white/10 mt-2">
-                          💡 <strong>Key Takeaway:</strong> {reel.takeaway}
+
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <img
+                              src={authorAvatar}
+                              alt={authorName}
+                              className="w-7 h-7 rounded-full object-cover border border-white"
+                              style={{ width: '28px', height: '28px' }}
+                            />
+                            <span className="text-xs font-bold text-white">{authorName}</span>
+                          </div>
+                          <h4 className="text-sm font-bold text-white leading-snug mb-1">{reel.title}</h4>
+                          <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-[11px] text-white/90 border border-white/10 mt-2">
+                            💡 <strong>Key Takeaway:</strong> {takeaway}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -459,41 +495,49 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pins.map((pin) => (
-                  <div
-                    key={pin.id}
-                    className="border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-md transition bg-slate-50/50 group"
-                  >
-                    <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                      <img
-                        src={pin.imageUrl}
-                        alt={pin.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <button
-                        onClick={() => handleSavePin(pin.id)}
-                        className={`absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full shadow-md transition ${
-                          pin.savedByMe
-                            ? 'bg-red-600 text-white'
-                            : 'bg-white/90 hover:bg-white text-slate-900 backdrop-blur-sm'
-                        }`}
-                      >
-                        {pin.savedByMe ? '📌 Saved' : 'Save'}
-                      </button>
-                    </div>
-                    <div className="p-4">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded">
-                        {pin.category}
-                      </span>
-                      <h4 className="font-bold text-sm text-slate-900 mt-2">{pin.title}</h4>
-                      <p className="text-xs text-slate-600 mt-1 line-clamp-2">{pin.description}</p>
-                      <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-                        <span>Pinned by {pin.authorName}</span>
-                        <span>❤️ {pin.saves} Saves</span>
+                {(pins || []).map((pin) => {
+                  const author = pin?.author || {};
+                  const authorName = author.name || pin?.authorName || 'Creator';
+                  const pinImage = pin?.image || pin?.imageUrl;
+                  const isSaved = pin?.isSaved ?? pin?.savedByMe ?? false;
+                  const savesCount = pin?.saves ?? 240;
+
+                  return (
+                    <div
+                      key={pin.id}
+                      className="border border-slate-200/80 rounded-xl overflow-hidden hover:shadow-md transition bg-slate-50/50 group"
+                    >
+                      <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                        <img
+                          src={pinImage}
+                          alt={pin.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <button
+                          onClick={() => handleSavePin(pin.id)}
+                          className={`absolute top-3 right-3 text-xs font-bold px-3 py-1.5 rounded-full shadow-md transition ${
+                            isSaved
+                              ? 'bg-red-600 text-white'
+                              : 'bg-white/90 hover:bg-white text-slate-900 backdrop-blur-sm'
+                          }`}
+                        >
+                          {isSaved ? '📌 Saved' : 'Save'}
+                        </button>
+                      </div>
+                      <div className="p-4">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                          {pin.category}
+                        </span>
+                        <h4 className="font-bold text-sm text-slate-900 mt-2">{pin.title}</h4>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">{pin.description}</p>
+                        <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                          <span>Pinned by {authorName}</span>
+                          <span>❤️ {savesCount} Saves</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -520,7 +564,7 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {DEMO_COMMUNITIES.map((c) => (
+                {(DEMO_COMMUNITIES || []).map((c) => (
                   <div
                     key={c.id}
                     className="border border-slate-200/80 rounded-xl p-5 bg-slate-50/50 hover:border-orange-300 transition"
@@ -534,7 +578,7 @@ export default function Home() {
                     </div>
                     <p className="text-xs text-slate-600 mb-4">{c.description}</p>
                     <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-200">
-                      <span>👥 {c.members.toLocaleString()} Members</span>
+                      <span>👥 {c.members?.toLocaleString?.() || c.members} Members</span>
                       <span className="text-emerald-600 font-semibold">● {c.online} online</span>
                     </div>
                   </div>
@@ -565,35 +609,43 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {droplets.map((d) => (
-                  <div
-                    key={d.id}
-                    className="border border-slate-200/80 rounded-xl p-4 bg-slate-50/50 hover:border-slate-400 transition"
-                  >
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <img
-                        src={d.authorAvatar}
-                        alt={d.authorName}
-                        className="w-8 h-8 rounded-full object-cover"
-                        style={{ width: '32px', height: '32px' }}
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-slate-900">{d.authorName}</div>
-                        <div className="text-[11px] text-slate-500">@{d.authorHandle}</div>
+                {(droplets || []).map((d) => {
+                  const author = d?.author || {};
+                  const authorName = author.name || 'Developer';
+                  const authorAvatar = author.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  const authorHandle = d?.handle || author.username || 'dev';
+                  const dropletContent = d?.content || d?.text || '';
+
+                  return (
+                    <div
+                      key={d.id}
+                      className="border border-slate-200/80 rounded-xl p-4 bg-slate-50/50 hover:border-slate-400 transition"
+                    >
+                      <div className="flex items-center gap-2.5 mb-2">
+                        <img
+                          src={authorAvatar}
+                          alt={authorName}
+                          className="w-8 h-8 rounded-full object-cover"
+                          style={{ width: '32px', height: '32px' }}
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">{authorName}</div>
+                          <div className="text-[11px] text-slate-500">{authorHandle}</div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-800 font-mono bg-white p-3 rounded-lg border border-slate-200 leading-relaxed my-2">
+                        {dropletContent}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
+                        <div className="flex items-center gap-4">
+                          <span>❤️ {d.likes}</span>
+                          <span>🔄 {d.reposts}</span>
+                        </div>
+                        <span className="text-indigo-600 font-medium">#{d.tag || 'Tip'}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-800 font-mono bg-white p-3 rounded-lg border border-slate-200 leading-relaxed my-2">
-                      {d.text}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
-                      <div className="flex items-center gap-4">
-                        <span>❤️ {d.likes}</span>
-                        <span>🔄 {d.reposts}</span>
-                      </div>
-                      <span className="text-indigo-600 font-medium">#{d.tag}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -620,38 +672,47 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {DEMO_SESSIONS.map((s) => (
-                  <div
-                    key={s.id}
-                    className="border border-slate-200/80 rounded-xl p-5 bg-slate-50/50 hover:border-red-300 transition"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                        {s.level} Level
-                      </span>
-                      <span className="text-xs text-slate-500 font-semibold">{s.duration}</span>
-                    </div>
-                    <h4 className="font-bold text-sm text-slate-900 mb-1">{s.title}</h4>
-                    <p className="text-xs text-slate-600 mb-3">{s.description}</p>
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={s.hostAvatar}
-                          alt={s.hostName}
-                          className="w-6 h-6 rounded-full object-cover"
-                          style={{ width: '24px', height: '24px' }}
-                        />
-                        <span className="font-medium text-slate-700">{s.hostName}</span>
+                {(DEMO_SESSIONS || []).map((s) => {
+                  const instructor = s?.instructor || {};
+                  const instructorName = instructor.name || 'Lead Mentor';
+                  const instructorAvatar = instructor.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  const duration = s?.durationMinutes ? `${s.durationMinutes} min` : '45 min';
+                  const attendees = s?.enrolledCount ?? 20;
+                  const maxAttendees = s?.maxSeats ?? 30;
+
+                  return (
+                    <div
+                      key={s.id}
+                      className="border border-slate-200/80 rounded-xl p-5 bg-slate-50/50 hover:border-red-300 transition"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                          {s.level || 'All'} Level
+                        </span>
+                        <span className="text-xs text-slate-500 font-semibold">{duration}</span>
                       </div>
-                      <Link
-                        href="/sessions"
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1 rounded-lg text-xs transition"
-                      >
-                        Reserve Seat ({s.attendees}/{s.maxAttendees})
-                      </Link>
+                      <h4 className="font-bold text-sm text-slate-900 mb-1">{s.title}</h4>
+                      <p className="text-xs text-slate-600 mb-3">{s.skill || 'Hands-on live session'}</p>
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-xs">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={instructorAvatar}
+                            alt={instructorName}
+                            className="w-6 h-6 rounded-full object-cover"
+                            style={{ width: '24px', height: '24px' }}
+                          />
+                          <span className="font-medium text-slate-700">{instructorName}</span>
+                        </div>
+                        <Link
+                          href="/sessions"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1 rounded-lg text-xs transition"
+                        >
+                          Reserve Seat ({attendees}/{maxAttendees})
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

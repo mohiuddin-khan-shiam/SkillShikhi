@@ -15,12 +15,16 @@ export default function Navbar() {
 
   useEffect(() => {
     const user = clientStore.getCurrentUser();
-    setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+    }
   }, [pathname]);
 
   const handleRoleSelect = (roleKey) => {
     const user = clientStore.switchRole(roleKey);
-    setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+    }
     setRoleMenuOpen(false);
     if (roleKey === 'admin') {
       router.push('/admin/dashboard');
@@ -41,6 +45,9 @@ export default function Navbar() {
     { href: '/skills', label: 'Skills', icon: '🎓' },
     { href: '/admin/dashboard', label: 'Admin Hub', icon: '🛡️' },
   ];
+
+  const userName = currentUser?.name || 'User';
+  const firstName = userName.split(' ')[0] || 'User';
 
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-xs">
@@ -97,10 +104,10 @@ export default function Navbar() {
                 title="Switch Demo Role"
               >
                 <span className="text-xs">
-                  {currentUser.isAdmin ? '🛡️' : currentUser.role?.includes('Mentor') ? '🎓' : '🎒'}
+                  {currentUser?.isAdmin ? '🛡️' : currentUser?.role?.includes('Mentor') ? '🎓' : '🎒'}
                 </span>
                 <span className="hidden sm:inline font-medium text-slate-500">Demo Role:</span>
-                <span className="font-bold text-slate-800">{currentUser.name.split(' ')[0]}</span>
+                <span className="font-bold text-slate-800">{firstName}</span>
                 <span className="text-[10px] text-slate-400">▼</span>
               </button>
 
@@ -112,7 +119,7 @@ export default function Navbar() {
                   <button
                     onClick={() => handleRoleSelect('learner')}
                     className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-indigo-50 transition ${
-                      currentUser.username === 'alexriver' ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
+                      currentUser?.username === 'alexriver' ? 'bg-indigo-50/70 font-semibold text-indigo-700' : 'text-slate-700'
                     }`}
                   >
                     <span className="text-lg">🎒</span>
@@ -124,7 +131,7 @@ export default function Navbar() {
                   <button
                     onClick={() => handleRoleSelect('mentor')}
                     className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-emerald-50 transition ${
-                      currentUser.username === 'sarahkhan_ai' ? 'bg-emerald-50/70 font-semibold text-emerald-700' : 'text-slate-700'
+                      currentUser?.username === 'sarahkhan_ai' ? 'bg-emerald-50/70 font-semibold text-emerald-700' : 'text-slate-700'
                     }`}
                   >
                     <span className="text-lg">🎓</span>
@@ -136,7 +143,7 @@ export default function Navbar() {
                   <button
                     onClick={() => handleRoleSelect('admin')}
                     className={`w-full text-left px-3 py-2 flex items-center gap-2.5 hover:bg-violet-50 transition ${
-                      currentUser.isAdmin ? 'bg-violet-50/70 font-semibold text-violet-700' : 'text-slate-700'
+                      currentUser?.isAdmin ? 'bg-violet-50/70 font-semibold text-violet-700' : 'text-slate-700'
                     }`}
                   >
                     <span className="text-lg">🛡️</span>
@@ -159,12 +166,12 @@ export default function Navbar() {
               }`}
             >
               <img
-                src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
-                alt={currentUser.name}
+                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                alt={userName}
                 className="w-7 h-7 rounded-full object-cover border border-slate-200"
                 style={{ width: '28px', height: '28px' }}
               />
-              <span className="text-xs font-semibold hidden md:inline">{currentUser.name}</span>
+              <span className="text-xs font-semibold hidden md:inline">{userName}</span>
             </Link>
 
             {/* Mobile Menu Toggle */}

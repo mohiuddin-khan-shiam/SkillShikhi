@@ -100,12 +100,12 @@ export default function FeedPage() {
               <div key={s.id} className="flex-shrink-0 flex flex-col items-center">
                 <div className="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-pink-500 to-indigo-600">
                   <img
-                    src={s.author.avatar}
-                    alt={s.author.name}
+                    src={s.author?.avatar || s.preview}
+                    alt={s.author?.name || 'Story'}
                     className="w-full h-full rounded-full object-cover border border-white"
                   />
                 </div>
-                <span className="text-[11px] font-medium text-slate-700 mt-1">{s.author.name.split(' ')[0]}</span>
+                <span className="text-[11px] font-medium text-slate-700 mt-1">{(s.author?.name || 'Peer').split(' ')[0]}</span>
               </div>
             ))}
           </div>
