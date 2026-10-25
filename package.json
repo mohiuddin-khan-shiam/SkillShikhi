@@ -1,5 +1,5 @@
 {
-  "name": "skillhub",
+  "name": "skillshikhi",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,7 +20,7 @@
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.2",
-    "next": "15.3.0",
+    "next": "^15.5.28",
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",
     "react": "^19.0.0",
@@ -34,7 +34,7 @@
     "@tailwindcss/postcss": "^4.1.3",
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
-    "eslint-config-next": "15.3.0",
+    "eslint-config-next": "^15.5.28",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.3"
   }

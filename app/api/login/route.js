@@ -4,22 +4,17 @@ export const runtime = 'nodejs';
 
 import dotenv from 'dotenv';
 dotenv.config();
-console.log('🚨 LOGIN ROUTE IS RUNNING');
-console.log('🔐 JWT_SECRET (login):', process.env.JWT_SECRET);
 
 import { NextResponse } from 'next/server';
 import { login } from '../../../controllers/auth/authController';
 import { successResponse, errorResponse, handleControllerResponse } from '../../../utils/apiResponse';
 
 export async function POST(request) {
-  console.log('📥 POST /api/login HIT');
-
   try {
     // Parse request body
     let body;
     try {
       body = await request.json();
-      console.log('📦 Request body parsed successfully');
     } catch (error) {
       console.error('❌ Error parsing request body:', error);
       return errorResponse('Invalid request body', 400);

@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 
-console.log('Ban endpoint loaded');
+
 
 // Helper function to verify admin token
 async function verifyAdminToken(request) {

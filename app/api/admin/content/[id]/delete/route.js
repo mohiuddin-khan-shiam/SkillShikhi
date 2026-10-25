@@ -12,7 +12,7 @@ import { logActivity } from '../../../../../../utils/activityLogger';
 import dotenv from 'dotenv';
 dotenv.config();
 
-console.log('Content delete endpoint loaded');
+
 
 // Verify admin token function
 async function verifyAdminToken(request) {
