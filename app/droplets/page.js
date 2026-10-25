@@ -10,11 +10,17 @@ export default function DropletsPage() {
   const [newTag, setNewTag] = useState('#CodeTip');
   const [selectedTag, setSelectedTag] = useState('All');
   const [currentUser, setCurrentUser] = useState(DEMO_USERS.alex);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     setDroplets(clientStore.getDroplets());
-    setCurrentUser(clientStore.getCurrentUser());
+    setCurrentUser(clientStore.getCurrentUser() || DEMO_USERS.alex);
   }, []);
+
+  const showToast = (text) => {
+    setToast(text);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const tags = ['All', '#JavaScript', '#AI', '#Linux', '#DesignTips', '#CSS', '#DevOps', '#Nextjs'];
 
@@ -28,12 +34,13 @@ export default function DropletsPage() {
     if (!newDropletText.trim()) return;
 
     const newDrop = clientStore.addDroplet({
-      content: newDropletText,
+      content: newDropletText.trim(),
       tag: newTag,
     });
 
     setDroplets([newDrop, ...droplets]);
     setNewDropletText('');
+    showToast('🚀 Droplet published to the developer feed!');
   };
 
   const handleLike = (id) => {
@@ -46,12 +53,24 @@ export default function DropletsPage() {
     setDroplets((prev) =>
       prev.map((d) => (d.id === id ? { ...d, reposts: d.reposts + 1 } : d))
     );
-    alert('Skill Droplet reposted to your followers!');
+    showToast('🔁 Code Droplet reposted to your followers!');
+  };
+
+  const handleBookmark = (id) => {
+    showToast('🔖 Tip bookmarked to your personal cheat sheet!');
   };
 
   return (
     <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Toast */}
+        {toast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <span>✓</span>
+            <span>{toast}</span>
+          </div>
+        )}
+
         {/* Banner */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs">
           <div className="flex items-center gap-2">
@@ -73,9 +92,9 @@ export default function DropletsPage() {
         >
           <div className="flex items-start gap-3">
             <img
-              src={currentUser.avatar}
+              src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
               alt={currentUser.name}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover border border-slate-200"
             />
             <div className="flex-1 space-y-2">
               <textarea
@@ -98,74 +117,70 @@ export default function DropletsPage() {
                   >
                     <option value="#JavaScript">#JavaScript</option>
                     <option value="#AI">#AI #LLMs</option>
-                    <option value="#Linux">#Linux #DevOps</option>
-                    <option value="#DesignTips">#DesignTips</option>
-                    <option value="#Nextjs">#Nextjs</option>
-                    <option value="#CodeTip">#CodeTip</option>
+                    <option value="#Linux">#Linux #Bash</option>
+                    <option value="#CSS">#CSS #Tailwind</option>
+                    <option value="#Nextjs">#Nextjs15</option>
+                    <option value="#DevOps">#DevOps</option>
                   </select>
+                  <span className="text-[11px] text-slate-400">
+                    {280 - newDropletText.length} left
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`text-xs font-mono ${
-                      newDropletText.length > 250 ? 'text-amber-600 font-bold' : 'text-slate-400'
-                    }`}
-                  >
-                    {280 - newDropletText.length}
-                  </span>
-                  <button
-                    type="submit"
-                    className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-full text-xs font-bold transition shadow-sm"
-                  >
-                    Drop Tip ⚡
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={!newDropletText.trim()}
+                  className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                  Post Droplet
+                </button>
               </div>
             </div>
           </div>
         </form>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {tags.map((t) => (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {tags.map((tag) => (
             <button
-              key={t}
-              onClick={() => setSelectedTag(t)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition flex-shrink-0 ${
-                selectedTag === t
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition flex-shrink-0 ${
+                selectedTag === tag
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              {t}
+              {tag}
             </button>
           ))}
         </div>
 
-        {/* Droplets Feed */}
-        <div className="space-y-4">
+        {/* Droplets Stream */}
+        <div className="space-y-3">
           {filteredDroplets.map((drop) => (
             <div
               key={drop.id}
-              className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 hover:border-indigo-300 transition"
+              className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:border-slate-300 transition"
             >
-              <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src={drop.author?.avatar}
+                    src={drop.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
                     alt={drop.author?.name}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-9 h-9 rounded-full object-cover border border-slate-200"
                   />
                   <div>
-                    <div className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                      <span>{drop.author?.name}</span>
-                      <span className="text-slate-400 font-normal text-xs">{drop.handle}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-xs text-slate-900">{drop.author?.name}</span>
+                      <span className="text-[11px] text-slate-400">{drop.handle}</span>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-[10px] text-slate-400">{drop.timeAgo}</span>
                     </div>
-                    <div className="text-[10px] text-slate-400">{drop.timeAgo}</div>
                   </div>
                 </div>
 
-                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
                   {drop.tag}
                 </span>
               </div>
@@ -176,7 +191,7 @@ export default function DropletsPage() {
 
               <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100 max-w-sm">
                 <button
-                  onClick={() => alert(`Replied to ${drop.author?.name}`)}
+                  onClick={() => showToast(`Replied to ${drop.author?.name}`)}
                   className="flex items-center gap-1.5 hover:text-indigo-600 transition"
                 >
                   <span>💬</span>
@@ -202,7 +217,7 @@ export default function DropletsPage() {
                 </button>
 
                 <button
-                  onClick={() => alert('Tip bookmarked to your collection!')}
+                  onClick={() => handleBookmark(drop.id)}
                   className="hover:text-amber-600 transition"
                 >
                   <span>🔖</span>

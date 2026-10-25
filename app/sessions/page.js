@@ -1,654 +1,469 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import UserList from '../components/UserList';
-import Calendar from '../components/Calendar';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import './sessions.css';
+import { DEMO_SESSIONS, DEMO_USERS } from '../../lib/demoData';
 import { clientStore } from '../../lib/clientStore';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [userId, setUserId] = useState(null);
-  const [error, setError] = useState(null);
-  const router = useRouter();
-  
-  // Modal states
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [rescheduleData, setRescheduleData] = useState({
-    preferredDate: '',
-    preferredTime: ''
-  });
-  const [rescheduleLoading, setRescheduleLoading] = useState(false);
-  const [rescheduleError, setRescheduleError] = useState(null);
-  const [showDateError, setShowDateError] = useState(false);
+  const [activeTab, setActiveTab] = useState('upcoming'); // 'all', 'live', 'upcoming', 'enrolled'
+  const [currentUser, setCurrentUser] = useState(DEMO_USERS.alex);
+  const [showHostModal, setShowHostModal] = useState(false);
+  const [bookingFeedback, setBookingFeedback] = useState(null);
 
-  // Initialize userId from localStorage only once on component mount
+  // New Workshop Form State
+  const [newTitle, setNewTitle] = useState('');
+  const [newSkill, setNewSkill] = useState('AI & Machine Learning');
+  const [newDate, setNewDate] = useState('2026-11-02');
+  const [newTime, setNewTime] = useState('18:00 UTC');
+  const [newDuration, setNewDuration] = useState('60');
+  const [newSeats, setNewSeats] = useState('30');
+  const [newAgenda, setNewAgenda] = useState('Foundational overview\nLive coding walkthrough\nInteractive Q&A');
+
   useEffect(() => {
-    try {
-      const storedUserId = localStorage.getItem('userId');
-      const token = localStorage.getItem('token');
-      
-      console.log('Auth info on page load:', { 
-        userId: storedUserId ? 'exists' : 'missing',
-        token: token ? 'exists' : 'missing' 
-      });
-      
-      if (storedUserId) {
-        setUserId(storedUserId);
-      } else {
-        console.error('No userId found in localStorage');
-        const demoId = 'user_alex_101';
-        localStorage.setItem('userId', demoId);
-        localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
-        setUserId(demoId);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('Error accessing localStorage:', error);
-      setError('Error initializing session. Please refresh the page.');
-      setLoading(false);
+    setCurrentUser(clientStore.getCurrentUser());
+    const storedSessions = clientStore.getSessions();
+    if (storedSessions && storedSessions.length > 0) {
+      setSessions(storedSessions);
+    } else {
+      setSessions(DEMO_SESSIONS);
     }
   }, []);
 
-  // Fetch sessions when tab changes or userId is set
-  useEffect(() => {
-    if (userId && activeTab !== 'calendar') {
-      fetchSessions();
-    }
-  }, [activeTab, userId]);
-
-  const fetchSessions = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
-      console.log(`Fetching ${activeTab} sessions with userId: ${userId}`);
-      
-      const res = await fetch(`/api/sessions?type=${activeTab}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('API error response:', errorData);
-        throw new Error(errorData.error || `Server returned ${res.status}`);
-      }
-      
-      const data = await res.json();
-      console.log(`Received ${data.sessions?.length || 0} sessions`);
-      setSessions(data.sessions || []);
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-      setError(null);
-      setSessions(clientStore.getSessions().map(s => ({
-        _id: s.id,
-        skill: s.skill,
-        status: s.status === 'scheduled' ? 'accepted' : s.status,
-        fromUser: { _id: 'user_alex_101', name: 'Alex River', profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-        toUser: { _id: s.instructor.id, name: s.instructor.name, profileImage: s.instructor.avatar },
-        preferredDate: s.scheduledDate,
-        preferredTime: s.scheduledTime,
-      })));
-      return;
-      setSessions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateSessionStatus = async (sessionId, status) => {
-    try {
-      setError(null);
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-      
-      console.log(`Updating session ${sessionId} to status: ${status}`);
-      
-      const res = await fetch('/api/sessions', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ sessionId, status })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Status update error response:', errorData);
-        throw new Error(errorData.error || `Failed to update session (${res.status})`);
-      }
-      
-      // Refresh sessions list
-      fetchSessions();
-    } catch (error) {
-      console.error('Error updating session status:', error);
-      setError(error.message || 'Failed to update session status');
-    }
-  };
-
-  const rescheduleSession = async (sessionId, newDate) => {
-    try {
-      setError(null);
-      setRescheduleLoading(true);
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-      
-      console.log(`Rescheduling session ${sessionId} to ${newDate}`);
-      
-      const res = await fetch('/api/sessions/reschedule', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ sessionId, preferredDate: newDate })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Reschedule error response:', errorData);
-        throw new Error(errorData.error || `Failed to reschedule session (${res.status})`);
-      }
-      
-      // Refresh sessions list
-      fetchSessions();
-    } catch (error) {
-      console.error('Error rescheduling session:', error);
-      setError(error.message || 'Failed to reschedule session');
-    } finally {
-      setRescheduleLoading(false);
-    }
-  };
-
-  const cancelSession = async (sessionId) => {
-    try {
-      setError(null);
-      
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
-      
-      console.log(`Cancelling session ${sessionId}`);
-      
-      const res = await fetch(`/api/sessions/cancel?sessionId=${sessionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Cancel error response:', errorData);
-        throw new Error(errorData.error || `Failed to cancel session (${res.status})`);
-      }
-      
-      console.log('Session cancelled successfully');
-      
-      // Refresh sessions list
-      fetchSessions();
-    } catch (error) {
-      console.error('Error cancelling session:', error);
-      setError(error.message || 'Failed to cancel session');
-    }
-  };
-
-  // Format date to readable string
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not specified';
-    try {
-      return format(new Date(dateString), 'PPP');
-    } catch (error) {
-      return 'Invalid date';
-    }
-  };
-
-  // Determine if user is the sender or receiver of the session request
-  const isRequester = (session) => {
-    const fromUserId = session.fromUser?._id || session.fromUser;
-    
-    console.log('Session details:', {
-      sessionId: session._id,
-      skill: session.skill,
-      fromUser: fromUserId,
-      toUser: session.toUser?._id || session.toUser,
-      status: session.status,
-      userId
+  const handleBookSession = (sessionId) => {
+    const updated = clientStore.bookSession(sessionId);
+    setSessions(updated);
+    setBookingFeedback({
+      sessionId,
+      message: '🎉 Seat confirmed! Classroom invite and study notes added to your schedule.',
     });
-    
-    return String(fromUserId) === String(userId);
+    setTimeout(() => setBookingFeedback(null), 4000);
   };
 
-  // Handle rescheduling with date validation
-  const handleReschedule = (sessionId) => {
-    // Show modal for rescheduling
-    setCurrentSessionId(sessionId);
-    setRescheduleData({
-      preferredDate: '',
-      preferredTime: ''
-    });
-    setRescheduleError(null);
-    setShowRescheduleModal(true);
-  };
+  const handleHostSubmit = (e) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
 
-  // Handle reschedule submit
-  const handleRescheduleSubmit = () => {
+    const user = clientStore.getCurrentUser();
+    const newSession = {
+      id: `sess_${Date.now()}`,
+      title: newTitle.trim(),
+      instructor: user,
+      skill: newSkill,
+      status: 'scheduled',
+      scheduledDate: newDate,
+      scheduledTime: newTime,
+      durationMinutes: parseInt(newDuration, 10) || 60,
+      enrolledCount: 1,
+      maxSeats: parseInt(newSeats, 10) || 30,
+      roomLink: `/classroom/${newSkill.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      level: 'All Levels',
+      isEnrolled: true,
+      agenda: newAgenda.split('\n').filter((item) => item.trim().length > 0),
+    };
+
+    const updated = [newSession, ...sessions];
+    setSessions(updated);
     try {
-      // Validate date and time
-      if (!rescheduleData.preferredDate) {
-        setRescheduleError('Please select a date');
-        return;
-      }
+      localStorage.setItem('skillshikhi_sessions', JSON.stringify(updated));
+    } catch (e) {}
 
-      // Create date object for validation
-      const dateObj = new Date(rescheduleData.preferredDate);
-      if (rescheduleData.preferredTime) {
-        const [hours, minutes] = rescheduleData.preferredTime.split(':');
-        dateObj.setHours(parseInt(hours, 10));
-        dateObj.setMinutes(parseInt(minutes, 10));
-      }
-
-      // Check if date is in the past
-      if (dateObj < new Date()) {
-        setShowDateError(true);
-        return;
-      }
-
-      // Proceed with rescheduling
-      rescheduleSession(currentSessionId, dateObj);
-      setShowRescheduleModal(false);
-    } catch (error) {
-      setRescheduleError(error.message);
-    }
+    setNewTitle('');
+    setShowHostModal(false);
+    setBookingFeedback({
+      sessionId: newSession.id,
+      message: '🚀 Workshop broadcast created! Classroom link is now public to community peers.',
+    });
+    setTimeout(() => setBookingFeedback(null), 4000);
   };
+
+  const filteredSessions = sessions.filter((sess) => {
+    if (activeTab === 'enrolled') return sess.isEnrolled;
+    if (activeTab === 'live') return sess.id === 'sess_1'; // Featured live demo
+    if (activeTab === 'upcoming') return sess.status === 'scheduled';
+    return true;
+  });
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header with Back to Profile Link */}
-      <div className="header">
-        <div className="container mx-auto px-4 py-3 flex items-center">
-          <Link href="/profile" className="back-link flex items-center text-gray-700 hover:text-blue-600 transition-colors">
-            <span className="mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </span>
-            <span className="text-lg">Back to Profile</span>
-          </Link>
-        </div>
-      </div>
-      
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="page-title">Session Management</h1>
-        
-        {/* Add User List Component with better styling */}
-        <div className="user-list-container">
-          <UserList />
-        </div>
-        
-        {/* Error message display */}
-        {error && (
-          <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative shadow-sm">
-            <strong className="font-bold">Error: </strong>
-            <span className="block sm:inline">{error}</span>
-            <button 
-              className="absolute top-0 bottom-0 right-0 px-4 py-3"
-              onClick={() => setError(null)}
+    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Banner & Paradigm Header */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">📺</span>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                Live Peer Workshops & Virtual Classrooms
+              </h1>
+              <span className="text-[10px] font-bold uppercase bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full">
+                YouTube & Google Classroom Paradigm
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Attend interactive engineering workshops, follow structured curriculum agendas, and reserve seats in mentor classrooms.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowHostModal(true)}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-2"
             >
-              <span className="text-xl">&times;</span>
+              <span>+</span>
+              <span>Host a Workshop</span>
+            </button>
+            <Link
+              href="/chat"
+              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <span>💬 Study Pods</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Global Feedback Banner */}
+        {bookingFeedback && (
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in duration-200">
+            <span>{bookingFeedback.message}</span>
+            <button onClick={() => setBookingFeedback(null)} className="text-emerald-600 hover:text-emerald-900">
+              ✕
             </button>
           </div>
         )}
-        
-        {/* Tabs - Improved styling */}
-        <div className="tabs-container">
-          <div className="flex border-b">
-            {['upcoming', 'pending', 'completed', 'calendar'].map((tab) => (
-              <button 
-                key={tab}
-                className={`tab ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
+
+        {/* Featured Live Main Stage Workshop */}
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-slate-800 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase px-3 py-1 bg-red-600 text-white rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                  Live Main Stage
+                </span>
+                <span className="text-xs font-semibold text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-800">
+                  Deep Learning & AI
+                </span>
+                <span className="text-xs text-slate-400">⏱ 60 min session</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                Practical Neural Networks with PyTorch: From Scratch to Fine-Tuning
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Step-by-step tensor computation, automatic backprop mechanics, and hands-on LLM adapter fine-tuning hosted live with real-time code reviews.
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <img
+                  src={DEMO_USERS.sarah.avatar}
+                  alt={DEMO_USERS.sarah.name}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-indigo-400"
+                />
+                <div>
+                  <div className="text-xs font-bold text-white">{DEMO_USERS.sarah.name}</div>
+                  <div className="text-[11px] text-slate-400">{DEMO_USERS.sarah.bio}</div>
+                </div>
+              </div>
+
+              <div className="pt-3 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => handleBookSession('sess_1')}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-red-900/50 flex items-center gap-2 transform hover:-translate-y-0.5"
+                >
+                  <span>📺</span>
+                  <span>Join Live Classroom</span>
+                </button>
+                <Link
+                  href="/chat"
+                  className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-md transition flex items-center gap-2"
+                >
+                  <span>💬 Open Session Chat</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Stage Preview Box */}
+            <div className="lg:col-span-5 bg-slate-900/90 rounded-2xl border border-slate-700/80 p-5 space-y-4 backdrop-blur-md">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-300 border-b border-slate-800 pb-3">
+                <span>Classroom Agenda</span>
+                <span className="text-emerald-400 font-mono">28 / 30 Seats Booked</span>
+              </div>
+
+              <div className="space-y-2.5 text-xs text-slate-300">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-indigo-900 text-indigo-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <span>Tensors and Automatic Differentiation fundamentals</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-indigo-900 text-indigo-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <span>Building an MLP with custom forward and backward passes</span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-indigo-900 text-indigo-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <span>Interactive PyTorch notebook debugging & peer Q&A</span>
+                </div>
+              </div>
+
+              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div className="bg-gradient-to-r from-red-500 to-indigo-500 h-full rounded-full" style={{ width: '93%' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters & Tabs */}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'upcoming', label: 'Upcoming Workshops', icon: '📅' },
+              { id: 'live', label: 'Live Now', icon: '🔴' },
+              { id: 'enrolled', label: 'My Enrolled Sessions', icon: '🎒' },
+              { id: 'all', label: 'All Catalog', icon: '📚' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
               >
-                {tab === 'calendar' ? 'Calendar' : tab.charAt(0).toUpperCase() + tab.slice(1) + ' Sessions'}
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
-        
-        {/* Content based on active tab */}
-        <div className="p-6">
-          {activeTab === 'calendar' ? (
-            <Calendar />
-          ) : loading ? (
-            <div className="py-10 text-center">
-              <div className="loading-spinner animate-spin rounded-full border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading sessions...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-10">
-              <p className="text-red-500 mb-4">{error}</p>
-              <button 
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition-colors"
-                onClick={() => router.push('/login')}
+
+          <span className="text-xs text-slate-400 font-semibold">
+            Showing {filteredSessions.length} technical workshop{filteredSessions.length === 1 ? '' : 's'}
+          </span>
+        </div>
+
+        {/* Sessions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredSessions.map((session) => {
+            const isEnrolled = session.isEnrolled;
+            const instructor = session.instructor || DEMO_USERS.sarah;
+            const seatsFilled = session.enrolledCount || 0;
+            const maxSeats = session.maxSeats || 30;
+            const fillPct = Math.min(100, Math.round((seatsFilled / maxSeats) * 100));
+
+            return (
+              <div
+                key={session.id}
+                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between group space-y-4"
               >
-                Go to Login
-              </button>
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="text-center py-10">
-              <div className="empty-state-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="empty-state-message">No {activeTab} sessions found</p>
-              <p className="empty-state-subtext">You don&apos;t have any {activeTab} sessions yet. When you do, they&apos;ll show up here!</p>
-              {activeTab === 'pending' && (
-                <button className="find-skills-btn" onClick={() => router.push('/skills')}
-                >
-                  Find Skills to Learn
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="session-grid">
-              {sessions.map((session) => {
-                // Debug user role in this session
-                const userIsRequester = isRequester(session);
-                const otherUser = userIsRequester ? session.toUser : session.fromUser;
-                
-                return (
-                <div key={session._id} className="session-card">
-                  {/* Session header with color based on status */}
-                  <div className={`px-6 py-3 flex justify-between items-center ${
-                    session.status === 'pending' ? 'bg-yellow-50' :
-                    session.status === 'accepted' ? 'bg-green-50' :
-                    session.status === 'completed' ? 'bg-blue-50' :
-                    session.status === 'rejected' ? 'bg-red-50' :
-                    session.status === 'cancelled' ? 'bg-gray-50' : 'bg-gray-50'
-                  }`}>
-                    <div className="flex items-center">
-                      <div className="user-avatar">
-                        <img 
-                          src={otherUser?.profileImage || '/images/profile-placeholder.png'} 
-                          alt={otherUser?.name || 'User'} 
-                        />
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="font-semibold text-gray-900">{otherUser?.name || 'User'}</h3>
-                        <p className="text-sm text-gray-500">
-                          {userIsRequester ? 'You requested this session' : 'Requested a session with you'}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`status-badge ${session.status}`}>
-                      {session.status.charAt(0).toUpperCase() + session.status.slice(1)}
+                <div className="space-y-3">
+                  {/* Category & Status */}
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                      {session.skill}
+                    </span>
+                    <span className="text-slate-400 font-mono text-[11px]">
+                      ⏱ {session.durationMinutes} min
                     </span>
                   </div>
-                  
-                  {/* Session content */}
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="mb-6 flex-1">
-                      <h4 className="session-skill">
-                        <span className="skill-icon">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
-                        </span>
-                        {session.skill}
-                      </h4>
-                      
-                      <div className="session-date-row">
-                        <span className="date-icon mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </span>
-                        <span>
-                          <strong>Date:</strong> {formatDate(session.preferredDate)}
-                        </span>
+
+                  <h3 className="font-bold text-sm text-slate-900 group-hover:text-indigo-600 transition leading-snug">
+                    {session.title}
+                  </h3>
+
+                  {/* Scheduled Date & Time */}
+                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span>🗓</span>
+                    <span className="font-semibold text-slate-700">{session.scheduledDate}</span>
+                    <span className="text-slate-300">·</span>
+                    <span>{session.scheduledTime}</span>
+                  </div>
+
+                  {/* Agenda */}
+                  {session.agenda && session.agenda.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Curriculum Highlights:
                       </div>
-                      
-                      {(session.status === 'rejected' || session.status === 'cancelled') && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-600 text-sm">
-                          <span className="info-icon inline-block mr-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </span>
-                          This session was {session.status}
-                        </div>
-                      )}
+                      <ul className="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+                        {session.agenda.slice(0, 3).map((item, idx) => (
+                          <li key={idx} className="truncate">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    
-                    <div className="session-actions">
-                      {/* Show actions based on session status and user role */}
-                      {/* Case 1: Pending session where user is recipient - show Accept/Decline */}
-                      {session.status === 'pending' && !userIsRequester && (
-                        <>
-                          <button 
-                            className="action-btn accept-btn"
-                            onClick={() => {
-                              console.log(`Accepting session ${session._id}`);
-                              updateSessionStatus(session._id, 'accepted');
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Accept
-                          </button>
-                          <button 
-                            className="action-btn decline-btn"
-                            onClick={() => {
-                              console.log(`Declining session ${session._id}`);
-                              updateSessionStatus(session._id, 'rejected');
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Decline
-                          </button>
-                        </>
-                      )}
-                      
-                      {/* Case 2: Pending session where user is requester - show Cancel */}
-                      {session.status === 'pending' && userIsRequester && (
-                        <button 
-                          className="action-btn cancel-btn"
-                          onClick={() => {
-                            console.log(`Cancelling session ${session._id}`);
-                            cancelSession(session._id);
-                          }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Cancel Request
-                        </button>
-                      )}
-                      
-                      {/* Case 3: Accepted session - both users can reschedule, complete, or cancel */}
-                      {session.status === 'accepted' && (
-                        <div className="session-actions-row">
-                          <button 
-                            className="action-btn reschedule-btn"
-                            onClick={() => {
-                              console.log(`Rescheduling session ${session._id}`);
-                              handleReschedule(session._id);
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            Reschedule
-                          </button>
-                          <button 
-                            className="action-btn complete-btn"
-                            onClick={() => {
-                              console.log(`Marking session ${session._id} as complete`);
-                              updateSessionStatus(session._id, 'completed');
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Complete
-                          </button>
-                          <button 
-                            className="action-btn cancel-btn"
-                            onClick={() => {
-                              console.log(`Cancelling session ${session._id}`);
-                              cancelSession(session._id);
-                            }}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Session ID - for debugging */}
-                    <p className="text-xs text-gray-400 mt-4 text-right">ID: {session._id}</p>
-                  </div>
+                  )}
                 </div>
-              )})}
-            </div>
-          )}
+
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  {/* Instructor Pill */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={instructor.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                        alt={instructor.name}
+                        className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-slate-800">{instructor.name}</div>
+                        <div className="text-[10px] text-slate-400">{instructor.role || 'Peer Mentor'}</div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[10px] font-bold text-slate-600">
+                        {seatsFilled} / {maxSeats} seats
+                      </div>
+                      <div className="w-16 bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                        <div
+                          className="bg-indigo-600 h-full rounded-full"
+                          style={{ width: `${fillPct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reserve / Enrolled Button */}
+                  <button
+                    onClick={() => handleBookSession(session.id)}
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+                      isEnrolled
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                    }`}
+                  >
+                    <span>{isEnrolled ? '✓ Enrolled in Classroom' : '🎟 Reserve Workshop Seat'}</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </div>
-      </div>
-      
-      {/* Reschedule Modal */}
-      {showRescheduleModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3 className="modal-title">Reschedule Session</h3>
-              <button 
-                className="modal-close"
-                onClick={() => setShowRescheduleModal(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="modal-body">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                handleRescheduleSubmit();
-              }}>
-                <div className="form-group">
-                  <label className="form-label">New Date</label>
+
+        {/* Host Workshop Modal */}
+        {showHostModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎙️</span>
+                  <h3 className="font-extrabold text-base text-slate-900">Host a Live Peer Workshop</h3>
+                </div>
+                <button
+                  onClick={() => setShowHostModal(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleHostSubmit} className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Workshop Title</label>
                   <input
-                    type="date"
-                    className="form-input"
-                    value={rescheduleData.preferredDate}
-                    onChange={(e) => setRescheduleData({...rescheduleData, preferredDate: e.target.value})}
+                    type="text"
                     required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g. Modern State Management with Zustand & React 19"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                   />
                 </div>
-                
-                <div className="form-group">
-                  <label className="form-label">New Time</label>
-                  <input
-                    type="time"
-                    className="form-input"
-                    value={rescheduleData.preferredTime}
-                    onChange={(e) => setRescheduleData({...rescheduleData, preferredTime: e.target.value})}
-                  />
-                </div>
-                
-                {rescheduleError && (
-                  <div className="error-message mb-4">
-                    <strong>Error: </strong>
-                    <span>{rescheduleError}</span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Skill Domain</label>
+                    <select
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    >
+                      <option value="AI & Machine Learning">AI & Machine Learning</option>
+                      <option value="Full Stack Engineering">Full Stack Engineering</option>
+                      <option value="DevOps & Infrastructure">DevOps & Infrastructure</option>
+                      <option value="UI/UX Engineering">UI/UX Engineering</option>
+                      <option value="Systems Programming">Systems Programming</option>
+                    </select>
                   </div>
-                )}
-                
-                <div className="form-actions">
+
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Duration</label>
+                    <select
+                      value={newDuration}
+                      onChange={(e) => setNewDuration(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    >
+                      <option value="45">45 Minutes</option>
+                      <option value="60">60 Minutes</option>
+                      <option value="90">90 Minutes</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Date</label>
+                    <input
+                      type="date"
+                      required
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 mb-1 block">Time (UTC)</label>
+                    <input
+                      type="text"
+                      required
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      placeholder="18:00 UTC"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Agenda Milestones (one per line)</label>
+                  <textarea
+                    rows={3}
+                    value={newAgenda}
+                    onChange={(e) => setNewAgenda(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
                   <button
                     type="button"
-                    className="btn-cancel"
-                    onClick={() => setShowRescheduleModal(false)}
+                    onClick={() => setShowHostModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
-                    disabled={rescheduleLoading}
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
                   >
-                    {rescheduleLoading ? (
-                      <>
-                        <svg className="loading-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Rescheduling...
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Reschedule
-                      </>
-                    )}
+                    Publish Workshop
                   </button>
                 </div>
               </form>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Date Error Modal */}
-      {showDateError && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3 className="modal-title">Invalid Date/Time</h3>
-              <button className="modal-close" onClick={() => setShowDateError(false)}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="modal-body">
-              <p style={{textAlign: 'center', fontWeight: 500, color: '#b91c1c', fontSize: '1.1rem'}}>Can&apos;t go to the past.</p>
-              <div style={{textAlign: 'center', marginTop: '1.5rem'}}>
-                <button className="btn-primary" onClick={() => setShowDateError(false)}>OK</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
-} 
+}

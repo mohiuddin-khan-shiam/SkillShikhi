@@ -1,11 +1,7 @@
 /* app/styles.css */
 
 /* ========== GENERAL ========== */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f2f5;
-}
+/* body managed in globals.css */
 
 /* ========== HEADER / NAV ========== */
 .profile-header {

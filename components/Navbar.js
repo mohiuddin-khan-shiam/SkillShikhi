@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { DEMO_USERS } from '../lib/demoData';
 import { clientStore } from '../lib/clientStore';
+import GlobalSearchModal from './GlobalSearchModal';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -12,6 +13,18 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState(DEMO_USERS.alex);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const user = clientStore.getCurrentUser();
@@ -94,8 +107,20 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right Action: Demo Switcher & Profile */}
+          {/* Right Action: Search, Demo Switcher & Profile */}
           <div className="flex items-center gap-2">
+            {/* Global Search Button */}
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100/90 hover:bg-indigo-50 border border-slate-200 text-xs text-slate-600 hover:text-indigo-600 transition"
+              title="Quick Search (Ctrl+K)"
+              aria-label="Quick Search"
+            >
+              <span>🔍</span>
+              <span className="hidden sm:inline font-medium">Search</span>
+              <kbd className="hidden md:inline text-[9px] bg-white border border-slate-200 px-1 py-0.2 rounded text-slate-400 font-mono">⌘K</kbd>
+            </button>
+
             {/* Interactive Demo Persona Switcher */}
             <div className="relative">
               <button
@@ -212,6 +237,11 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      {/* Global Search Dialog Modal */}
+      <GlobalSearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
     </nav>
   );
 }

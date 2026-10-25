@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import Toast from '../Toast';
 
 const SessionsTab = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
   const [selectedSession, setSelectedSession] = useState(null);
   const [filter, setFilter] = useState('active'); // 'active', 'all', 'terminated'
   const [page, setPage] = useState(1);
@@ -93,10 +100,10 @@ const SessionsTab = () => {
         setSelectedSession(null);
       }
       
-      alert('Session terminated successfully');
+      showToast('Session terminated successfully');
     } catch (error) {
       console.error('Error terminating session:', error);
-      alert(`Error: ${error.message}`);
+      showToast(error.message || 'Failed to terminate session', 'error');
     }
   };
   
@@ -492,6 +499,13 @@ const SessionsTab = () => {
           color: #ef4444;
         }
       `}</style>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

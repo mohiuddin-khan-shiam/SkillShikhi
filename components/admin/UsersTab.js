@@ -3,11 +3,18 @@
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { FaSearch, FaFilter, FaUserCircle, FaBan, FaUnlock, FaEye, FaDownload } from 'react-icons/fa';
+import Toast from '../Toast';
 
 const UsersTab = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -114,7 +121,7 @@ const UsersTab = () => {
         const adminId = decodedToken.userId;
         
         if (adminId === userId) {
-          alert('Admin cannot ban their own account.');
+          showToast('Admin cannot ban their own account.', 'error');
           return;
         }
       }
@@ -148,7 +155,7 @@ const UsersTab = () => {
       const responseData = await response.json();
       console.log('User action response:', responseData);
       
-      alert(responseData.message || `User ${action}ed successfully`);
+      showToast(responseData.message || `User ${action}ed successfully`);
       
       // Force refresh the users list to reflect the changes
       await fetchUsers(true);
@@ -159,7 +166,7 @@ const UsersTab = () => {
       }
     } catch (error) {
       console.error(`Error ${action}ing user:`, error);
-      alert(`Error: ${error.message}`);
+      showToast(error.message || 'Operation failed', 'error');
     }
   };
   
@@ -562,6 +569,13 @@ const UsersTab = () => {
             </div>
           )}
         </div>
+      )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

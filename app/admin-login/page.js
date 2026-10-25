@@ -1,15 +1,15 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import '../styles.css';
 import { DEMO_USERS } from '../../lib/demoData';
 import { clientStore } from '../../lib/clientStore';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@skillshikhi.demo');
+  const [password, setPassword] = useState('admin123456');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -27,8 +27,8 @@ export default function AdminLoginPage() {
   const handleDemoAdminClick = () => {
     setLoading(true);
     setTimeout(() => {
-      triggerAdminLogin('demo_admin_jwt_token_recruiter_preview', DEMO_USERS.admin);
-    }, 300);
+      triggerAdminLogin('demo_admin_jwt_token_active', DEMO_USERS.admin);
+    }, 250);
   };
 
   const handleSubmit = async (e) => {
@@ -47,206 +47,120 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Fallback for demo ease
-        triggerAdminLogin('demo_admin_jwt_token_recruiter_preview', DEMO_USERS.admin);
+        triggerAdminLogin('demo_admin_jwt_token_active', DEMO_USERS.admin);
       } else {
         triggerAdminLogin(data.token, data.user || DEMO_USERS.admin);
       }
     } catch (err) {
       console.warn('Admin login fallback triggered:', err);
-      triggerAdminLogin('demo_admin_jwt_token_recruiter_preview', DEMO_USERS.admin);
+      triggerAdminLogin('demo_admin_jwt_token_active', DEMO_USERS.admin);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="admin-login-wrapper">
-      <div className="admin-login-box">
-        {/* Quick Mode Banner */}
-        <div className="recruiter-pill-banner">
-          <span className="badge-pulse"></span>
-          <span>Lead Administrator Portal</span>
-        </div>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="login-logo text-center">
-          <Link href="/">
-            <img src="/logo.png" alt="SkillShikhi Logo" className="logo mx-auto mb-2" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-900">Admin Control Center</h1>
-          <p className="text-xs text-gray-500">Platform Analytics, Moderation & Health Metrics</p>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleDemoAdminClick}
-          className="demo-instant-btn"
-          disabled={loading}
-        >
-          <span>⚡</span>
-          <div>
-            <div className="font-semibold text-sm">Instant Demo Admin Login</div>
-            <div className="text-xs text-indigo-200">1-click login with full moderation privileges</div>
-          </div>
-        </button>
-
-        <div className="divider-text">
-          <span>or sign in with credentials</span>
-        </div>
-
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group mb-3">
-            <label htmlFor="email" className="block text-xs font-medium text-gray-700 mb-1">
-              Admin Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              placeholder="admin@skillshikhi.demo"
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-control w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+      <div className="max-w-md w-full space-y-6 relative z-10">
+        {/* Header Badge */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950 border border-indigo-700/80 text-indigo-300 text-xs font-bold shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Lead Administrator Portal
           </div>
 
-          <div className="form-group mb-4">
-            <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                placeholder="••••••••"
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-control w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-2 top-2 text-gray-400 text-sm"
-              >
-                {showPass ? '🙈' : '👁️'}
-              </button>
+          <div className="flex items-center justify-center gap-2.5 pt-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm">
+              SS
             </div>
+            <span className="text-2xl font-black text-white tracking-tight">SkillShikhi Admin</span>
+          </div>
+          <p className="text-xs text-slate-400">
+            Telemetry, user moderation, audit logs & system health monitor
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+          {/* 1-Click Instant Demo Access */}
+          <button
+            type="button"
+            onClick={handleDemoAdminClick}
+            disabled={loading}
+            className="w-full p-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold transition shadow-lg shadow-indigo-900/50 flex items-center justify-center gap-3 text-left group"
+          >
+            <span className="text-2xl group-hover:scale-110 transition-transform">⚡</span>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-indigo-200">
+                Fast-Track Demo Access
+              </div>
+              <div className="text-sm font-bold text-white">Sign In as Platform Lead (Shiam)</div>
+            </div>
+          </button>
+
+          <div className="flex items-center gap-3 text-slate-600 text-xs font-semibold">
+            <div className="h-px bg-slate-800 flex-1"></div>
+            <span>or sign in with admin credentials</span>
+            <div className="h-px bg-slate-800 flex-1"></div>
           </div>
 
-          {errorMsg && <p className="text-xs text-red-600 mb-3">{errorMsg}</p>}
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            <div>
+              <label className="font-bold text-slate-300 mb-1.5 block">Admin Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 text-white rounded-xl focus:border-indigo-500 focus:outline-hidden"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
-            disabled={loading}
-          >
-            {loading ? 'Authenticating...' : 'Sign In as Admin'}
-          </button>
-        </form>
+            <div>
+              <label className="font-bold text-slate-300 mb-1.5 block">Security Password</label>
+              <div className="relative">
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 text-white rounded-xl focus:border-indigo-500 focus:outline-hidden pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 text-sm"
+                >
+                  {showPass ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between text-xs text-gray-500">
-          <Link href="/login" className="hover:text-indigo-600">
-            ← Member Login
-          </Link>
-          <Link href="/" className="hover:text-indigo-600">
-            Back to Home
-          </Link>
+            {errorMsg && <p className="text-rose-400 text-xs">{errorMsg}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <span>{loading ? 'Authenticating...' : 'Enter Admin Hub'}</span>
+              <span>→</span>
+            </button>
+          </form>
+
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+            <Link href="/" className="hover:text-slate-300 transition">
+              ← Return Home
+            </Link>
+            <Link href="/login" className="text-indigo-400 hover:text-indigo-300 transition">
+              User Login
+            </Link>
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .admin-login-wrapper {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-          padding: 1.5rem;
-        }
-        .admin-login-box {
-          background: #ffffff;
-          max-width: 440px;
-          width: 100%;
-          border-radius: 16px;
-          padding: 2rem;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-        }
-        .recruiter-pill-banner {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          background: #eef2ff;
-          color: #4338ca;
-          font-size: 0.75rem;
-          font-weight: 600;
-          padding: 0.35rem 0.75rem;
-          border-radius: 999px;
-          margin-bottom: 1.25rem;
-          border: 1px solid #c7d2fe;
-        }
-        .badge-pulse {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #4f46e5;
-          box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
-          animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
-          }
-          70% {
-            box-shadow: 0 0 0 8px rgba(79, 70, 229, 0);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
-          }
-        }
-        .demo-instant-btn {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-          color: white;
-          border: none;
-          padding: 0.75rem 1rem;
-          border-radius: 12px;
-          margin: 1.25rem 0 1rem;
-          cursor: pointer;
-          transition: transform 0.15s, box-shadow 0.15s;
-          box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-          text-align: left;
-        }
-        .demo-instant-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
-        }
-        .divider-text {
-          position: relative;
-          text-align: center;
-          margin: 1rem 0;
-          font-size: 0.75rem;
-          color: #94a3b8;
-        }
-        .divider-text::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 50%;
-          width: 100%;
-          height: 1px;
-          background: #e2e8f0;
-          z-index: 1;
-        }
-        .divider-text span {
-          background: white;
-          padding: 0 0.5rem;
-          position: relative;
-          z-index: 2;
-        }
-      `}</style>
     </div>
   );
 }

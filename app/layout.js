@@ -31,16 +31,6 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
-        {/* Guaranteed Tailwind CSS styling layer */}
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              img { max-width: 100%; }
-              body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
-            `,
-          }}
-        />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans antialiased">
         <Navbar />

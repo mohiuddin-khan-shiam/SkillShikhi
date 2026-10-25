@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import Toast from '../Toast';
 
 const ContentTab = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
   const [selectedContent, setSelectedContent] = useState(null);
   const [filters, setFilters] = useState({
     type: 'post',
@@ -121,10 +128,10 @@ const ContentTab = () => {
       }
       
       // Show success message
-      alert(responseData.message || `Content ${action} successful`);
+      showToast(responseData.message || `Content ${action} successful`);
     } catch (error) {
       console.error(`Error ${action}ing content:`, error);
-      alert(`Error: ${error.message}`);
+      showToast(error.message || `Error ${action}ing content`, 'error');
     }
   };
   
@@ -593,7 +600,7 @@ const ContentTab = () => {
                             if (userId) {
                               handleContentAction(userId, 'ban', 'Multiple violations');
                             } else {
-                              alert('Could not identify user to ban');
+                              showToast('Could not identify user to ban', 'error');
                             }
                           }
                         }}
@@ -930,6 +937,13 @@ const ContentTab = () => {
           cursor: pointer;
         }
       `}</style>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

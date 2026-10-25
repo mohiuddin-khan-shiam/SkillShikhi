@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format, subDays } from 'date-fns';
+import Toast from '../Toast';
 
 const AnalyticsTab = () => {
   const [analytics, setAnalytics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
   const [dateRange, setDateRange] = useState({
     startDate: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd')
@@ -101,10 +108,10 @@ const AnalyticsTab = () => {
       // Refresh analytics data
       fetchAnalytics();
       
-      alert('Analytics generated successfully');
+      showToast('Analytics generated successfully');
     } catch (error) {
       console.error('Error generating analytics:', error);
-      alert(`Error: ${error.message}`);
+      showToast(error.message || 'Error generating analytics', 'error');
     }
   };
   
@@ -124,7 +131,7 @@ const AnalyticsTab = () => {
     const end = new Date(dateRange.endDate);
     
     if (start > end) {
-      alert('Start date cannot be after end date');
+      showToast('Start date cannot be after end date', 'error');
       return;
     }
     
@@ -606,6 +613,13 @@ const AnalyticsTab = () => {
           overflow-x: auto;
         }
       `}</style>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

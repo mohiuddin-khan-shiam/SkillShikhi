@@ -11,6 +11,8 @@ export default function CommunityPage() {
   const [showThreadModal, setShowThreadModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newSummary, setNewSummary] = useState('');
+  const [toast, setToast] = useState(null);
+  const showToast = (t) => { setToast(t); setTimeout(() => setToast(null), 3000); };
 
   useEffect(() => {
     setCommunities(clientStore.getCommunities());
@@ -50,6 +52,7 @@ export default function CommunityPage() {
     setNewTitle('');
     setNewSummary('');
     setShowThreadModal(false);
+    showToast('🚀 Question submitted to community!');
   };
 
   return (
@@ -217,14 +220,14 @@ export default function CommunityPage() {
 
                 <div className="pt-2 flex items-center gap-4 text-xs text-slate-500">
                   <button
-                    onClick={() => alert('Opening discussion thread replies...')}
+                    onClick={() => showToast('💬 Verified solutions & thread answers expanded!')}
                     className="flex items-center gap-1.5 hover:text-orange-600 font-medium"
                   >
                     <span>💬</span>
                     <span>{thread.commentsCount} Answers & Solutions</span>
                   </button>
                   <button
-                    onClick={() => alert('Shareable link copied!')}
+                    onClick={() => showToast('🔗 Shareable community thread link copied!')}
                     className="flex items-center gap-1 hover:text-slate-700"
                   >
                     <span>↗</span>

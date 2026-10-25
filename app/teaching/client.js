@@ -1,218 +1,278 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import Cookies from "js-cookie";
-import '../styles.css';
-import NotificationsPanel from '../components/NotificationsPanel';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Cookies from 'js-cookie';
 import { DEMO_USERS } from '../../lib/demoData';
 import { clientStore } from '../../lib/clientStore';
 
 export default function TeachingRequestsClient() {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState("received");
-    const [requests, setRequests] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
-    const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('received');
+  const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [user, setUser] = useState(null);
 
-    // Check authentication status with demo fallback
-    useEffect(() => {
-        const token = Cookies.get('token') || localStorage.getItem('token');
-        const currentUser = clientStore.getCurrentUser() || DEMO_USERS.alex;
-        setUser(currentUser);
+  // Check authentication status with demo fallback
+  useEffect(() => {
+    const token = Cookies.get('token') || localStorage.getItem('token');
+    const currentUser = clientStore.getCurrentUser() || DEMO_USERS.alex;
+    setUser(currentUser);
 
-        // Fetch user data if real API available
-        const fetchUserData = async () => {
-            if (!token) return;
-            try {
-                const response = await fetch('/api/user/profile', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const userData = await response.json();
-                    if (userData?.user) setUser(userData.user);
-                }
-            } catch (error) {
-                console.warn('Fallback to demo persona in teaching requests');
-            }
-        };
-
-        fetchUserData();
-    }, [router]);
-
-    // Fetch teaching requests
-    useEffect(() => {
-        const fetchRequests = async () => {
-            setIsLoading(true);
-            setError("");
-            
-            try {
-                const token = Cookies.get('token') || localStorage.getItem('token') || 'demo_token';
-                const response = await fetch(`/api/teaching-requests?type=${activeTab}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok && data.requests) {
-                    setRequests(data.requests);
-                } else {
-                    setRequests([
-                        {
-                            _id: 'req_1',
-                            skill: 'Neural Networks & PyTorch',
-                            status: 'pending',
-                            date: '2026-10-28',
-                            time: '18:00',
-                            message: 'Looking for guidance on PyTorch autograd and backprop optimization.',
-                            requester: DEMO_USERS.alex,
-                            teacher: DEMO_USERS.sarah,
-                        }
-                    ]);
-                }
-            } catch (error) {
-                console.warn("Using demo teaching requests:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        
-        fetchRequests();
-    }, [activeTab]);
-    
-    const handleTabChange = (tab) => {
-        setActiveTab(tab);
-    };
-    
-    const handleStatusChange = async (requestId, newStatus) => {
-        try {
-            setRequests(prev => prev.map(req => req._id === requestId ? { ...req, status: newStatus } : req));
-            setSuccessMessage(`Request successfully marked as ${newStatus}`);
-            setTimeout(() => setSuccessMessage(''), 3000);
-        } catch (error) {
-            console.error("Error updating teaching request:", error);
-            setError("Failed to update status");
+    // Fetch user data if real API available
+    const fetchUserData = async () => {
+      if (!token) return;
+      try {
+        const response = await fetch('/api/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData?.user) setUser(userData.user);
         }
+      } catch (error) {
+        console.warn('Fallback to demo persona in teaching requests');
+      }
     };
-    
-    return (
-        <div className="teaching-requests-container">
-            <header className="profile-header">
-                <Link href="/" className="logo-link">
-                    <img src="/logo.png" alt="SkillShikhi Logo" className="logo" />
-                </Link>
-                <div className="header-actions">
-                    <Link href="/sessions" className="nav-link">
-                        📅 Classroom & Sessions
-                    </Link>
-                    <Link href="/profile" className="back-button">
-                        Back to Profile
-                    </Link>
-                </div>
-            </header>
 
-            <div className="container py-4">
-                <div className="teaching-header mb-4">
-                    <h1 className="text-2xl font-bold">Teaching Requests</h1>
-                    <p className="text-gray-600">Coordinate peer tutoring and 1-on-1 skill mentorship</p>
-                </div>
+    fetchUserData();
+  }, []);
 
-                {successMessage && (
-                    <div className="alert alert-success p-3 rounded mb-4 bg-green-50 text-green-700 border border-green-200">
-                        {successMessage}
-                    </div>
-                )}
+  // Fetch teaching requests
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      setError('');
 
-                {error && (
-                    <div className="alert alert-danger p-3 rounded mb-4 bg-red-50 text-red-700 border border-red-200">
-                        {error}
-                    </div>
-                )}
+      try {
+        const token = Cookies.get('token') || localStorage.getItem('token') || 'demo_token';
+        const response = await fetch(`/api/teaching-requests?type=${activeTab}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-                <div className="teaching-tabs flex gap-4 border-b border-gray-200 mb-6">
-                    <button
-                        className={`tab-btn py-2 px-4 font-medium border-b-2 transition ${activeTab === 'received' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
-                        onClick={() => handleTabChange('received')}
-                    >
-                        Requests Received ({requests.length})
-                    </button>
-                    <button
-                        className={`tab-btn py-2 px-4 font-medium border-b-2 transition ${activeTab === 'sent' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500'}`}
-                        onClick={() => handleTabChange('sent')}
-                    >
-                        Requests Sent
-                    </button>
-                </div>
+        const data = await response.json();
 
-                {isLoading ? (
-                    <div className="loading-state py-8 text-center text-gray-500">Loading requests...</div>
-                ) : requests.length === 0 ? (
-                    <div className="empty-state py-12 text-center bg-white rounded-xl shadow-sm p-8">
-                        <p className="text-gray-500 mb-4">No {activeTab} teaching requests at the moment.</p>
-                        <Link href="/skills" className="btn btn-primary px-4 py-2 bg-indigo-600 text-white rounded-lg">
-                            Explore Mentors & Skills
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="requests-list grid gap-4">
-                        {requests.map((req) => (
-                            <div key={req._id} className="request-card bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-semibold text-lg text-gray-900">{req.skill}</span>
-                                        <span className={`status-badge text-xs px-2.5 py-0.5 rounded-full font-medium ${req.status === 'accepted' ? 'bg-green-100 text-green-800' : req.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                            {req.status?.toUpperCase()}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        With: <strong className="text-indigo-600">{req.requester?.name || req.teacher?.name || 'Peer Learner'}</strong>
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        📅 {req.date || 'TBD'} at {req.time || 'Flexible'}
-                                    </p>
-                                    {req.message && (
-                                        <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2.5 rounded border border-gray-100">
-                                            "{req.message}"
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="request-actions flex gap-2">
-                                    {req.status === 'pending' && (
-                                        <>
-                                            <button 
-                                                onClick={() => handleStatusChange(req._id, 'accepted')}
-                                                className="btn-accept px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
-                                            >
-                                                Accept Request
-                                            </button>
-                                            <button 
-                                                onClick={() => handleStatusChange(req._id, 'rejected')}
-                                                className="btn-reject px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
-                                            >
-                                                Decline
-                                            </button>
-                                        </>
-                                    )}
-                                    {req.status === 'accepted' && (
-                                        <Link 
-                                            href={`/chat`}
-                                            className="btn-chat px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
-                                        >
-                                            Message Tutor
-                                        </Link>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+        if (response.ok && data.requests) {
+          setRequests(data.requests);
+        } else {
+          setRequests([
+            {
+              _id: 'req_1',
+              skill: 'Neural Networks & PyTorch',
+              status: 'pending',
+              date: '2026-10-28',
+              time: '18:00 UTC',
+              message: 'Looking for 1-on-1 guidance on PyTorch autograd tensors and fine-tuning adapters.',
+              requester: DEMO_USERS.alex,
+              teacher: DEMO_USERS.sarah,
+            },
+            {
+              _id: 'req_2',
+              skill: 'Docker & Kubernetes Manifests',
+              status: 'accepted',
+              date: '2026-10-30',
+              time: '16:30 UTC',
+              message: 'Help setting up local k3s multi-container development environment.',
+              requester: DEMO_USERS.alex,
+              teacher: DEMO_USERS.tariq,
+            },
+          ]);
+        }
+      } catch (error) {
+        console.warn('Using demo teaching requests:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [activeTab]);
+
+  const handleStatusChange = async (requestId, newStatus) => {
+    try {
+      setRequests((prev) =>
+        prev.map((req) => (req._id === requestId ? { ...req, status: newStatus } : req))
+      );
+      setSuccessMessage(`Request successfully marked as ${newStatus}`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating teaching request:', error);
+      setError('Failed to update status');
+    }
+  };
+
+  return (
+    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Banner */}
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🤝</span>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                Peer Teaching & Mentorship Requests
+              </h1>
+              <span className="text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">
+                Messenger Paradigm
+              </span>
             </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Coordinate 1-on-1 peer mentoring sessions, code audits, and technical tutoring requests.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/sessions"
+              className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+            >
+              <span>📅 Classroom Workshops</span>
+            </Link>
+            <Link
+              href="/skills"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+            >
+              Find a Mentor
+            </Link>
+          </div>
         </div>
-    );
+
+        {/* Feedback messages */}
+        {successMessage && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold animate-in fade-in">
+            ✓ {successMessage}
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3.5 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold animate-in fade-in">
+            ✕ {error}
+          </div>
+        )}
+
+        {/* Tab Controls */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+          <button
+            onClick={() => setActiveTab('received')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'received'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            Mentorship Requests Received ({requests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('sent')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'sent'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            Requests Sent
+          </button>
+        </div>
+
+        {/* List of Requests */}
+        {isLoading ? (
+          <div className="py-12 text-center text-xs text-slate-400">Loading teaching requests...</div>
+        ) : requests.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center space-y-3">
+            <div className="text-3xl">📬</div>
+            <h3 className="font-bold text-sm text-slate-800">No {activeTab} teaching requests</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Explore community skills and request 1-on-1 mentorship from top-ranked practitioners.
+            </p>
+            <Link
+              href="/skills"
+              className="inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+            >
+              Explore Mentors & Skills
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {requests.map((req) => {
+              const partner = req.requester || req.teacher || DEMO_USERS.sarah;
+              return (
+                <div
+                  key={req._id}
+                  className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-indigo-200 transition"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-slate-900">{req.skill}</span>
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
+                          req.status === 'accepted'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : req.status === 'rejected'
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                            : 'bg-amber-100 text-amber-800 border border-amber-200'
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <img
+                        src={partner.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'}
+                        alt={partner.name}
+                        className="w-5 h-5 rounded-full object-cover"
+                      />
+                      <span>
+                        Collaborator: <strong className="text-indigo-700">{partner.name}</strong>
+                      </span>
+                      <span className="text-slate-300">·</span>
+                      <span className="text-slate-500">
+                        🗓 {req.date || 'Flexible Date'} at {req.time || '18:00 UTC'}
+                      </span>
+                    </div>
+
+                    {req.message && (
+                      <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                        "{req.message}"
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {req.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleStatusChange(req._id, 'accepted')}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                        >
+                          Accept Mentorship
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(req._id, 'rejected')}
+                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition"
+                        >
+                          Decline
+                        </button>
+                      </>
+                    )}
+                    {req.status === 'accepted' && (
+                      <Link
+                        href="/chat"
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5"
+                      >
+                        <span>💬 Message in Pod</span>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

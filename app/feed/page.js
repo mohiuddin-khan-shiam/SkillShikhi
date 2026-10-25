@@ -15,6 +15,8 @@ export default function FeedPage() {
   const [showPostComposer, setShowPostComposer] = useState(false);
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentInput, setCommentInput] = useState('');
+  const [toast, setToast] = useState(null);
+  const showToast = (t) => { setToast(t); setTimeout(() => setToast(null), 3000); };
 
   useEffect(() => {
     setCurrentUser(clientStore.getCurrentUser());
@@ -268,7 +270,7 @@ export default function FeedPage() {
                 </button>
 
                 <button
-                  onClick={() => alert('Link copied to clipboard for peer sharing!')}
+                  onClick={() => showToast('🔗 Link copied to clipboard for peer sharing!')}
                   className="flex items-center gap-1.5 font-medium hover:text-indigo-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition"
                 >
                   <span>↗</span>

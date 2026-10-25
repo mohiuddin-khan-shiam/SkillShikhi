@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import Toast from '../Toast';
 
 const ReportsTab = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
   const [selectedReports, setSelectedReports] = useState([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
@@ -239,7 +246,7 @@ const ReportsTab = () => {
   // Handle bulk actions
   const handleBulkAction = async (action) => {
     if (selectedReports.length === 0) {
-      alert('Please select at least one report');
+      showToast('Please select at least one report', 'error');
       return;
     }
 
@@ -267,10 +274,10 @@ const ReportsTab = () => {
       fetchReports();
       // Clear selections
       setSelectedReports([]);
-      alert(`Bulk action '${action}' completed successfully`);
+      showToast(`Bulk action '${action}' completed successfully`);
     } catch (error) {
       console.error('Error performing bulk action:', error);
-      alert('Failed to perform bulk action');
+      showToast('Failed to perform bulk action', 'error');
     } finally {
       setBulkActionLoading(false);
     }
@@ -646,7 +653,7 @@ const ReportsTab = () => {
                               if (reason) {
                                 // Mock ban user API call
                                 setTimeout(() => {
-                                  alert('User banned successfully');
+                                  showToast('User banned successfully');
                                   handleReportAction(selectedReport._id, 'resolve', `User banned: ${reason}`);
                                 }, 500);
                               }
@@ -666,7 +673,7 @@ const ReportsTab = () => {
                               if (reason) {
                                 // Mock content moderation API call
                                 setTimeout(() => {
-                                  alert('Content deleted successfully');
+                                  showToast('Content deleted successfully');
                                   handleReportAction(selectedReport._id, 'resolve', `Content deleted: ${reason}`);
                                 }, 500);
                               }
@@ -905,6 +912,13 @@ const ReportsTab = () => {
           color: white;
         }
       `}</style>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

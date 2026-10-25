@@ -1,1518 +1,483 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import '../styles.css';
-import NotificationsPanel from '../components/NotificationsPanel';
+import Link from 'next/link';
 import { DEMO_USERS } from '../../lib/demoData';
 import { clientStore } from '../../lib/clientStore';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // State for mastered skills
+  const [user, setUser] = useState(DEMO_USERS.alex);
+  const [activeTab, setActiveTab] = useState('skills'); // 'skills', 'posts', 'about'
   const [masteredSkills, setMasteredSkills] = useState([]);
-  const [newMasteredSkill, setNewMasteredSkill] = useState({
-    name: '',
-    description: '',
-    experienceYears: 1
-  });
-  const [showMasteredSkillForm, setShowMasteredSkillForm] = useState(false);
-  const [editingSkillId, setEditingSkillId] = useState(null);
-  const [masteredSkillsLoading, setMasteredSkillsLoading] = useState(false);
+  const [showSkillModal, setShowSkillModal] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
 
-  // State for post creation
-  const [showPostForm, setShowPostForm] = useState(false);
-  const [postData, setPostData] = useState({
-    content: '',
-    skillTag: '',
-    skillTags: [],
-    media: null,
-    mediaPreview: null,
-    mediaType: null
-  });
-  const [posts, setPosts] = useState([]);
-  const [postsLoading, setPostsLoading] = useState(false);
+  // New Skill Form
+  const [newSkillName, setNewSkillName] = useState('');
+  const [newSkillDesc, setNewSkillDesc] = useState('');
+  const [newSkillExp, setNewSkillExp] = useState(2);
 
-  // Add state for likes and comments
-  const [activeCommentPost, setActiveCommentPost] = useState(null);
-  const [commentText, setCommentText] = useState('');
-  const [commentsVisible, setCommentsVisible] = useState({});
-  const [postsWithComments, setPostsWithComments] = useState({});
-  const [isLiking, setIsLiking] = useState(false);
-  const [isCommenting, setIsCommenting] = useState(false);
+  // New Post Form
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostTag, setNewPostTag] = useState('Full Stack Engineering');
+
+  // Posts
+  const [userPosts, setUserPosts] = useState([]);
 
   useEffect(() => {
-    async function fetchProfile() {
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: 'no-store',
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        console.log('Profile data received:', data);
-        // The API returns the user object directly, not nested
-        setUser(data || {});
-        // Set mastered skills from the user data if available
-        if (data?.masteredSkills) {
-          console.log('Mastered skills from profile API:', data.masteredSkills);
-          setMasteredSkills(data.masteredSkills);
-        }
-      } else {
-        console.error('Failed to fetch profile:', await res.text());
-        const fallbackUser = clientStore.getCurrentUser() || DEMO_USERS.alex;
-        setUser(fallbackUser);
-        if (fallbackUser?.masteredSkills) {
-          setMasteredSkills(fallbackUser.masteredSkills);
-        }
-      }
-    }
-
-    fetchProfile();
-    // Fetch mastered skills separately to ensure we have the latest data
-    fetchMasteredSkills();
+    const currentUser = clientStore.getCurrentUser() || DEMO_USERS.alex;
+    setUser(currentUser);
+    setMasteredSkills(currentUser.masteredSkills || [
+      { name: 'JavaScript & TypeScript', experienceYears: 3, endorsements: 18, description: 'Modern ESNext, strict typing, and Node.js backend development.' },
+      { name: 'React 19 & Next.js 15', experienceYears: 2, endorsements: 24, description: 'Server components, client hydration, and optimistic state engines.' },
+      { name: 'Tailwind CSS', experienceYears: 3, endorsements: 15, description: 'Component design systems, responsive utilities, and custom tokens.' }
+    ]);
+    setUserPosts(clientStore.getPosts().filter((p) => p.author?.username === currentUser.username || p.author?.id === currentUser.id));
   }, []);
 
-  const handleSearch = async (e) => {
+  const showToast = (text) => {
+    setToastMessage(text);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleAddSkill = (e) => {
     e.preventDefault();
+    if (!newSkillName.trim()) return;
 
-    if (!searchQuery.trim()) {
-      setSearchResults(null);
-      return;
-    }
+    const newSkill = {
+      name: newSkillName.trim(),
+      description: newSkillDesc.trim(),
+      experienceYears: parseInt(newSkillExp, 10) || 1,
+      endorsements: 1,
+    };
 
-    setIsSearching(true);
+    const updated = [newSkill, ...masteredSkills];
+    setMasteredSkills(updated);
 
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    // Save to user object
+    const updatedUser = { ...user, masteredSkills: updated };
+    setUser(updatedUser);
+    clientStore.setCurrentUser(updatedUser);
 
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
-        headers
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setSearchResults(data);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsSearching(false);
-    }
+    setNewSkillName('');
+    setNewSkillDesc('');
+    setShowSkillModal(false);
+    showToast(`🎓 Mastered skill "${newSkill.name}" added to your profile!`);
   };
 
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setSearchResults(null);
+  const handleDeleteSkill = (skillName) => {
+    const updated = masteredSkills.filter((s) => s.name !== skillName);
+    setMasteredSkills(updated);
+    const updatedUser = { ...user, masteredSkills: updated };
+    setUser(updatedUser);
+    clientStore.setCurrentUser(updatedUser);
+    showToast(`Skill removed from profile.`);
   };
 
-  const navigateToSkill = (skillName) => {
-    router.push(`/skills/${encodeURIComponent(skillName)}`);
-  };
-
-  const navigateToUser = (userId) => {
-    router.push(`/user/${userId}`);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
-
-  // Handle post form input changes
-  const handlePostInputChange = (e) => {
-    const { name, value, files } = e.target;
-
-    if (name === 'media' && files && files.length > 0) {
-      const file = files[0];
-      const fileType = file.type.split('/')[0]; // 'image' or 'video'
-
-      // Create a preview URL
-      const fileReader = new FileReader();
-      fileReader.onload = (event) => {
-        setPostData(prev => ({
-          ...prev,
-          media: file,
-          mediaPreview: event.target.result,
-          mediaType: fileType
-        }));
-      };
-      fileReader.readAsDataURL(file);
-    } else {
-      setPostData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
-
-  // Fetch user posts
-  const fetchPosts = async () => {
-    const targetId = user?._id || user?.id || DEMO_USERS.alex.id;
-
-    setPostsLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      console.log('Fetching posts for user:', user._id);
-
-      const response = await fetch(`/api/posts/user/${targetId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Posts received:', data.posts?.length || 0);
-        setPosts(data.posts && data.posts.length > 0 ? data.posts : clientStore.getPosts());
-      } else {
-        const errorText = await response.text();
-        console.error('Failed to fetch posts:', errorText);
-      }
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    } finally {
-      setPostsLoading(false);
-    }
-  };
-
-  // Handle post submission
-  const handlePostSubmit = async (e) => {
+  const handleCreatePost = (e) => {
     e.preventDefault();
+    if (!newPostContent.trim()) return;
 
-    if (!postData.content) {
-      alert('Please enter some content for your post');
-      return;
-    }
-
-    if (!postData.skillTag && (!postData.skillTags || postData.skillTags.length === 0)) {
-      alert('Please enter at least one skill tag');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('content', postData.content);
-
-      // Send multiple skill tags if available, otherwise use the single skillTag
-      if (postData.skillTags && postData.skillTags.length > 0) {
-        formData.append('skillTag', postData.skillTags[0]); // Use the first tag as primary
-        formData.append('skillTags', JSON.stringify(postData.skillTags));
-      } else if (postData.skillTag) {
-        formData.append('skillTag', postData.skillTag);
-      }
-
-      if (postData.media) {
-        formData.append('media', postData.media);
-      }
-
-      console.log('Submitting post with data:', {
-        content: postData.content,
-        skillTag: postData.skillTag || (postData.skillTags && postData.skillTags[0]),
-        hasMedia: !!postData.media
-      });
-
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      const responseData = await response.json();
-
-      if (response.ok) {
-        console.log('Post created successfully:', responseData);
-        // Reset form and fetch updated posts
-        setPostData({
-          content: '',
-          skillTag: '',
-          skillTags: [],
-          media: null,
-          mediaPreview: null,
-          mediaType: null
-        });
-        setShowPostForm(false);
-        // Add a short delay to ensure the post is saved before fetching
-        setTimeout(() => fetchPosts(), 500);
-      } else {
-        console.error('Failed to create post:', responseData);
-        alert(`Failed to create post: ${responseData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error creating post:', error);
-      alert('Something went wrong while creating your post. Please try again.');
-    }
-  };
-
-  // Fetch posts when user data is loaded
-  useEffect(() => {
-    if (user?._id) {
-      fetchPosts();
-    }
-  }, [user?._id]);
-
-  // Function to fetch mastered skills separately
-  const fetchMasteredSkills = async () => {
-    try {
-      console.log('🔍 Fetching mastered skills...');
-      setMasteredSkillsLoading(true);
-      const token = localStorage.getItem('token');
-      const res = await fetch('/api/mastered-skills', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: 'no-store',
-      });
-
-      console.log('✅ Mastered skills API response status:', res.status);
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log('📊 Mastered skills data received:', data);
-
-        if (Array.isArray(data.masteredSkills)) {
-          console.log('📋 Number of mastered skills:', data.masteredSkills.length);
-
-          // Log each skill's name for debugging
-          data.masteredSkills.forEach((skill, index) => {
-            console.log(`Skill ${index + 1}:`, skill.name || 'unnamed skill');
-          });
-
-          setMasteredSkills(data.masteredSkills || []);
-        } else {
-          console.error('❌ masteredSkills is not an array:', data.masteredSkills);
-          setMasteredSkills([]);
-        }
-      } else {
-        console.error('❌ Failed to fetch mastered skills:', await res.text());
-      }
-    } catch (error) {
-      console.error('❌ Error fetching mastered skills:', error);
-    } finally {
-      setMasteredSkillsLoading(false);
-    }
-  };
-
-  // Handle mastered skill form input changes
-  const handleMasteredSkillChange = (e) => {
-    const { name, value } = e.target;
-    setNewMasteredSkill(prev => ({
-      ...prev,
-      [name]: name === 'experienceYears' ? parseInt(value) || 0 : value
-    }));
-  };
-
-  // Submit mastered skill form
-  const handleMasteredSkillSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!newMasteredSkill.name) {
-      alert('Skill name is required!');
-      return;
-    }
-
-    try {
-      console.log('Submitting mastered skill:', newMasteredSkill);
-
-      const token = localStorage.getItem('token');
-      const endpoint = '/api/mastered-skills';
-
-      // Prepare the request payload
-      const payload = {
-        skill: newMasteredSkill.name,
-        description: newMasteredSkill.description,
-        experienceYears: newMasteredSkill.experienceYears
-      };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseData = await response.json();
-      console.log('API response:', responseData);
-
-      if (response.ok) {
-        // Reset form
-        setNewMasteredSkill({ name: '', description: '', experienceYears: 1 });
-        setShowMasteredSkillForm(false);
-        setEditingSkillId(null);
-
-        // Refresh the mastered skills list
-        fetchMasteredSkills();
-
-        alert(`Successfully ${editingSkillId ? 'updated' : 'added'} mastered skill!`);
-      } else {
-        alert(`Failed to ${editingSkillId ? 'update' : 'add'} mastered skill: ${responseData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error with mastered skill:', error);
-      alert('Something went wrong with the mastered skill operation.');
-    }
-  };
-
-  // Delete a mastered skill
-  const handleDeleteMasteredSkill = async (skillName) => {
-    if (!confirm(`Are you sure you want to delete the mastered skill "${skillName}"?`)) {
-      return;
-    }
-
-    try {
-      console.log(`Attempting to delete mastered skill: ${skillName}`);
-
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/mastered-skills?skill=${encodeURIComponent(skillName)}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-      console.log('Delete skill response:', data);
-
-      if (response.ok) {
-        // Refresh mastered skills
-        console.log('Successfully deleted skill, refreshing mastered skills');
-        fetchMasteredSkills();
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to delete mastered skill: ${errorData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting mastered skill:', error);
-      alert('Something went wrong while deleting your mastered skill.');
-    }
-  };
-
-  // Edit a mastered skill
-  const handleEditMasteredSkill = (skill) => {
-    setNewMasteredSkill({
-      name: skill.name,
-      description: skill.description || '',
-      experienceYears: skill.experienceYears || 1
+    const post = clientStore.addPost({
+      content: newPostContent.trim(),
+      skillTag: newPostTag,
     });
-    setEditingSkillId(skill._id);
-    setShowMasteredSkillForm(true);
-  };
 
-  if (!user) return <p>Loading...</p>;
-
-  const displayName = user.name || 'No Name Provided';
-  const displayBio = user.bio || "This user hasn't added a bio yet.";
-  const displaySkills = user.skills?.length > 0 ? user.skills.join(', ') : 'No skills added.';
-  const profileImage = user.profileImage?.trim() ? user.profileImage : '/images/profile-placeholder.png';
-  const coverImage = user.coverImage?.trim() ? user.coverImage : '/images/cover-placeholder.png';
-
-  // Format availability for display
-  let availabilityData = {};
-  let timeSlots = [];
-  try {
-    if (user.availability) {
-      if (typeof user.availability === 'string') {
-        try {
-          // Try to parse as JSON
-          const parsedData = JSON.parse(user.availability);
-          if (parsedData.days) {
-            availabilityData = parsedData.days;
-            timeSlots = parsedData.timeSlots || [];
-          } else {
-            // Legacy format - just days
-            availabilityData = parsedData;
-          }
-        } catch (parseError) {
-          // If not valid JSON, treat as a simple string description
-          console.log('Availability is a non-JSON string:', user.availability);
-          timeSlots = [user.availability]; // Store as a single time slot
-        }
-      } else {
-        availabilityData = user.availability;
-      }
-    }
-  } catch (e) {
-    console.error('Error handling availability:', e);
-  }
-
-  // Format availability for display
-  const formatAvailability = () => {
-    const days = Object.keys(availabilityData);
-
-    if (days.length === 0 && timeSlots.length === 0) {
-      return "No availability set";
-    }
-
-    return (
-      <div>
-        {days.length > 0 && (
-          <div className="availability-display">
-            {days.map(day => (
-              <span key={day} className="availability-day-tag">{day}</span>
-            ))}
-          </div>
-        )}
-
-        {timeSlots.length > 0 && (
-          <div className="time-slots-display">
-            <div className="time-slot-header">Time Slots:</div>
-            <div className="time-slot-tags">
-              {timeSlots.map(slot => (
-                <span key={slot} className="time-slot-tag">{slot}</span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Check if the current user has liked a post
-  const hasUserLikedPost = (post) => {
-    return user && post.likes && post.likes.includes(user._id);
-  };
-
-  // Toggle like on a post
-  const handleLikePost = async (postId) => {
-    if (isLiking) return;
-
-    setIsLiking(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/posts/like', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ postId })
-      });
-
-      if (response.ok) {
-        // Update the posts state to reflect the like
-        setPosts(currentPosts =>
-          currentPosts.map(post => {
-            if (post._id === postId) {
-              const userLikedIndex = post.likes.indexOf(user._id);
-
-              if (userLikedIndex === -1) {
-                // Add like
-                return { ...post, likes: [...post.likes, user._id] };
-              } else {
-                // Remove like
-                const newLikes = [...post.likes];
-                newLikes.splice(userLikedIndex, 1);
-                return { ...post, likes: newLikes };
-              }
-            }
-            return post;
-          })
-        );
-      } else {
-        console.error('Failed to update like status');
-      }
-    } catch (error) {
-      console.error('Error liking post:', error);
-    } finally {
-      setIsLiking(false);
-    }
-  };
-
-  // Toggle comment section for a post
-  const toggleComments = async (postId) => {
-    // Toggle comments visibility
-    setCommentsVisible(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-
-    // If we're showing comments and haven't loaded them yet, fetch them
-    if (!commentsVisible[postId] && !postsWithComments[postId]) {
-      await fetchComments(postId);
-    }
-  };
-
-  // Fetch comments for a post
-  const fetchComments = async (postId) => {
-    try {
-      const response = await fetch(`/api/posts/comment?postId=${postId}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        setPostsWithComments(prev => ({
-          ...prev,
-          [postId]: data.comments || []
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    }
-  };
-
-  // Add a comment to a post
-  const handleAddComment = async (e) => {
-    e.preventDefault();
-
-    if (!activeCommentPost || !commentText.trim() || isCommenting) return;
-
-    setIsCommenting(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/posts/comment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          postId: activeCommentPost,
-          content: commentText
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Add the new comment to the comments list
-        setPostsWithComments(prev => ({
-          ...prev,
-          [activeCommentPost]: [
-            ...(prev[activeCommentPost] || []),
-            data.comment
-          ]
-        }));
-
-        // Update the post's comment count
-        setPosts(currentPosts =>
-          currentPosts.map(post => {
-            if (post._id === activeCommentPost) {
-              return {
-                ...post,
-                comments: [...(post.comments || []), data.comment]
-              };
-            }
-            return post;
-          })
-        );
-
-        // Clear the comment text
-        setCommentText('');
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error);
-    } finally {
-      setIsCommenting(false);
-    }
+    setUserPosts([post, ...userPosts]);
+    setNewPostContent('');
+    setShowPostModal(false);
+    showToast(`📰 Post published to the Skill Feed!`);
   };
 
   return (
-    <div className="profile-wrapper">
-      <header className="profile-header">
-        <img src="/logo.png" alt="SkillShikhi Logo" className="logo" />
-        <div className="search-container">
-          <form onSubmit={handleSearch} className="search-form">
-            <input
-              type="text"
-              placeholder="Search for skills or users..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            <button type="submit" className="search-button">
-              Search
-            </button>
-            {searchQuery && (
-              <button type="button" onClick={handleClearSearch} className="clear-button">
-                Clear
-              </button>
-            )}
-          </form>
-        </div>
-        <div className="nav-buttons">
-          <NotificationsPanel />
-          <button onClick={() => router.push('/friends')} className="friends-button">
-            Friends & Requests
-          </button>
-          <button onClick={() => router.push('/skills')} className="discover-button">
-            Discover Skills
-          </button>
-          <button onClick={() => router.push('/chat')} className="action-button">
-            Messages
-          </button>
-          <button onClick={handleLogout} className="logout-button">Logout</button>
-        </div>
-      </header>
-
-      {searchResults && (
-        <div className="search-results-container">
-          <div className="search-results">
-            <div className="search-section">
-              <h3>Skills ({searchResults.skills.length})</h3>
-              {searchResults.skills.length === 0 ? (
-                <p>No skills found</p>
-              ) : (
-                <ul className="results-list">
-                  {searchResults.skills.map(skill => (
-                    <li
-                      key={skill._id}
-                      className="result-item skill-result"
-                      onClick={() => navigateToSkill(skill.name)}
-                    >
-                      <div className="result-content">
-                        <h4>{skill.name}</h4>
-                        <p>{skill.count} {skill.count === 1 ? 'person' : 'people'}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="search-section">
-              <h3>People ({searchResults.users.length})</h3>
-              {searchResults.users.length === 0 ? (
-                <p>No users found</p>
-              ) : (
-                <ul className="results-list">
-                  {searchResults.users.map(user => (
-                    <li
-                      key={user.id}
-                      className={`result-item user-result ${user.isPrivate ? 'private-profile' : ''}`}
-                      onClick={() => navigateToUser(user.id)}
-                    >
-                      <img
-                        src={user.profileImage}
-                        alt={user.name}
-                        className="result-user-image"
-                      />
-                      <div className="result-content">
-                        <h4>{user.name} {user.isPrivate && <span className="private-badge">🔒 Private</span>}</h4>
-                        {!user.isPrivate ? (
-                          <>
-                            <p className="user-skills">
-                              {user.skills?.length > 0
-                                ? user.skills.slice(0, 3).join(', ') + (user.skills.length > 3 ? '...' : '')
-                                : 'No skills listed'}
-                            </p>
-                            <p className="user-location">{user.location}</p>
-                          </>
-                        ) : (
-                          <p className="private-message">Send a friend request to view details</p>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Toast Feedback */}
+        {toastMessage && (
+          <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+            <span>✓</span>
+            <span>{toastMessage}</span>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="cover-container">
-        <img src={coverImage} alt="Cover" className="cover-image" />
-        <img src={profileImage} alt="Profile" className="profile-picture" />
-      </div>
-
-      <div className="profile-content">
-        <div className="profile-left" />
-        <div className="profile-right">
-          <h1>{displayName}</h1>
-          <p className="bio"><em>{displayBio}</em></p>
-
-          <p><strong>Skills:</strong> {displaySkills}</p>
-
-          <div className="availability-section">
-            <strong>Availability:</strong>
-            {formatAvailability()}
+        {/* Profile Card & Header */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+          {/* Cover Banner */}
+          <div className="h-36 sm:h-48 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-800 relative">
+            <div className="absolute inset-0 bg-black/10"></div>
           </div>
 
-          <p><strong>Location:</strong> {user.location || 'Not specified'}</p>
-
-          <button className="edit-button" onClick={() => router.push('/profile/edit')}>
-            Edit Profile
-          </button>
-        </div>
-      </div>
-
-      {/* Mastered Skills Section */}
-      <div className="mastered-skills-surface">
-        <div className="surface-header">
-          <h2>Mastered Skills</h2>
-          <p>Showcase skills you've mastered and want to teach others</p>
-        </div>
-
-        <div className="mastered-skills-container">
-          {masteredSkillsLoading ? (
-            <div className="loading-mastered-skills">
-              <div className="loading-spinner"></div>
-              <p>Loading your mastered skills...</p>
-            </div>
-          ) : masteredSkills.length > 0 ? (
-            <div className="mastered-skills-list">
-              {masteredSkills.map((skill) => (
-                <div key={skill._id || skill.name} className="mastered-skill-card">
-                  <div className="mastered-skill-header">
-                    <div className="skill-name-badge">
-                      <span className="skill-icon">🎓</span>
-                      <h3>{skill.name}</h3>
-                    </div>
-                    <div className="mastered-skill-actions">
-                      <button
-                        onClick={() => handleEditMasteredSkill(skill)}
-                        className="mastered-skill-edit-btn"
-                        title="Edit this skill"
-                      >
-                        <span className="button-icon">✏️</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMasteredSkill(skill.name)}
-                        className="mastered-skill-delete-btn"
-                        title="Delete this skill"
-                      >
-                        <span className="button-icon">🗑️</span>
-                      </button>
-                    </div>
+          {/* Profile Header Details */}
+          <div className="px-6 sm:px-8 pb-6 relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-14 sm:-mt-16 mb-4">
+              <div className="flex items-end gap-4">
+                <img
+                  src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                  alt={user.name}
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white shadow-md bg-white flex-shrink-0"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900">{user.name}</h1>
+                    {user.isAdmin ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-violet-100 text-violet-800 rounded-full border border-violet-200">
+                        Admin Lead
+                      </span>
+                    ) : user.role?.includes('Mentor') ? (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
+                        Mentor
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full border border-indigo-200">
+                        Learner
+                      </span>
+                    )}
                   </div>
+                  <p className="text-xs text-slate-500 font-medium">@{user.username || 'user'} · {user.role || 'Member'}</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                <button
+                  onClick={() => setShowSkillModal(true)}
+                  className="flex-1 sm:flex-initial px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>+</span>
+                  <span>Add Mastered Skill</span>
+                </button>
+                <button
+                  onClick={() => setShowPostModal(true)}
+                  className="flex-1 sm:flex-initial px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>✍️</span>
+                  <span>Create Post</span>
+                </button>
+                <Link
+                  href="/profile/edit"
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
+                  title="Edit Profile"
+                >
+                  ⚙️
+                </Link>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <p className="text-xs sm:text-sm text-slate-700 max-w-3xl leading-relaxed">
+              {user.bio || 'Continuous learner exploring modern distributed systems, cloud computing, and social peer knowledge sharing.'}
+            </p>
+
+            {/* Quick Metrics Strip */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 mt-4 border-t border-slate-100 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-slate-900">{masteredSkills.length}</span>
+                <span className="text-slate-500">Mastered Skills</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-slate-900">42</span>
+                <span className="text-slate-500">Peer Endorsements</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-slate-900">18</span>
+                <span className="text-slate-500">Study Pod Sessions</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                <span>🔥 24-Day Learning Streak</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+          <button
+            onClick={() => setActiveTab('skills')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'skills'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>🎓</span>
+            <span>Mastered Skills ({masteredSkills.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'posts'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>📰</span>
+            <span>My Skill Posts ({userPosts.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('about')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+              activeTab === 'about'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <span>ℹ️</span>
+            <span>Availability & Setup</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Mastered Skills (LinkedIn Paradigm) */}
+        {activeTab === 'skills' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900">Verified Mastered Capabilities</h3>
+                <p className="text-xs text-slate-500">Skills you are qualified to mentor and teach other community members.</p>
+              </div>
+              <button
+                onClick={() => setShowSkillModal(true)}
+                className="text-xs font-bold text-sky-700 hover:text-sky-900 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-200 transition"
+              >
+                + Add Another Skill
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {masteredSkills.map((skill) => (
+                <div
+                  key={skill.name}
+                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:border-sky-300 transition space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-lg font-bold">
+                        🎓
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-900">{skill.name}</h4>
+                        <div className="text-[11px] text-slate-400">
+                          {skill.experienceYears} {skill.experienceYears === 1 ? 'year' : 'years'} practical experience
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteSkill(skill.name)}
+                      className="text-slate-300 hover:text-rose-500 text-xs p-1 transition"
+                      title="Remove skill"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+
                   {skill.description && (
-                    <p className="mastered-skill-description">{skill.description}</p>
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      {skill.description}
+                    </p>
                   )}
-                  <div className="mastered-skill-meta">
-                    <span className="mastered-skill-experience">
-                      <span className="experience-icon">⏱️</span>
-                      {skill.experienceYears} {skill.experienceYears === 1 ? 'year' : 'years'} of experience
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                    <span className="text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100 text-[10px]">
+                      ✓ Available to Teach
                     </span>
-                    <span className="teach-badge">Available to teach</span>
+                    <span className="text-slate-500 font-semibold text-[11px]">
+                      👍 {skill.endorsements || 12} Endorsements
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="no-mastered-skills">
-              <div className="empty-state-icon">🧠</div>
-              <p>You haven't added any mastered skills yet.</p>
-              <p className="empty-state-hint">Add skills you're proficient in and want to teach others!</p>
-            </div>
-          )}
+          </div>
+        )}
 
-          {showMasteredSkillForm ? (
-            <div className="mastered-skill-form-container">
-              <h3 className="form-title">{editingSkillId ? 'Edit Mastered Skill' : 'Add Mastered Skill'}</h3>
-              <form onSubmit={handleMasteredSkillSubmit} className="mastered-skill-form">
-                <div className="form-group">
-                  <label htmlFor="skillName">Skill Name<span className="required">*</span></label>
-                  <input
-                    type="text"
-                    id="skillName"
-                    name="name"
-                    value={newMasteredSkill.name}
-                    onChange={handleMasteredSkillChange}
-                    placeholder="e.g., JavaScript, Photography, Chess"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="skillDescription">Description</label>
-                  <textarea
-                    id="skillDescription"
-                    name="description"
-                    value={newMasteredSkill.description}
-                    onChange={handleMasteredSkillChange}
-                    placeholder="Describe your expertise and what you can teach others"
-                    rows="4"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="experienceYears">Years of Experience</label>
-                  <div className="number-input-container">
-                    <button
-                      type="button"
-                      className="number-control"
-                      onClick={() => {
-                        if (newMasteredSkill.experienceYears > 1) {
-                          setNewMasteredSkill({
-                            ...newMasteredSkill,
-                            experienceYears: newMasteredSkill.experienceYears - 1
-                          });
-                        }
-                      }}
-                    >-</button>
-                    <input
-                      type="number"
-                      id="experienceYears"
-                      name="experienceYears"
-                      min="1"
-                      max="50"
-                      value={newMasteredSkill.experienceYears}
-                      onChange={handleMasteredSkillChange}
-                    />
-                    <button
-                      type="button"
-                      className="number-control"
-                      onClick={() => {
-                        if (newMasteredSkill.experienceYears < 50) {
-                          setNewMasteredSkill({
-                            ...newMasteredSkill,
-                            experienceYears: newMasteredSkill.experienceYears + 1
-                          });
-                        }
-                      }}
-                    >+</button>
+        {/* Tab 2: User Posts */}
+        {activeTab === 'posts' && (
+          <div className="space-y-4">
+            {userPosts.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center space-y-3">
+                <div className="text-3xl">✍️</div>
+                <h3 className="font-bold text-sm text-slate-800">No posts published yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Share a technical breakdown, code snippet, or learning question with the community.
+                </p>
+                <button
+                  onClick={() => setShowPostModal(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition"
+                >
+                  Create Your First Post
+                </button>
+              </div>
+            ) : (
+              userPosts.map((p) => (
+                <div key={p.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                      #{p.skillTag || 'Engineering'}
+                    </span>
+                    <span className="text-[11px] text-slate-400">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'Recent'}</span>
+                  </div>
+                  <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-line">{p.content}</p>
+                  <div className="flex items-center gap-4 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    <span>❤️ {p.likesCount || 0} Likes</span>
+                    <span>💬 {p.commentsCount || 0} Comments</span>
                   </div>
                 </div>
+              ))
+            )}
+          </div>
+        )}
 
-                <div className="form-actions">
-                  <button type="submit" className="submit-btn">
-                    {editingSkillId ? 'Update Skill' : 'Add Skill'}
-                  </button>
+        {/* Tab 3: About & Availability */}
+        {activeTab === 'about' && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 text-xs">
+            <h3 className="font-extrabold text-sm text-slate-900">Mentorship Schedule & Study Pod Hours</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                <div className="font-bold text-slate-800">Weekdays:</div>
+                <p className="text-slate-600">Available from 17:00 to 20:00 UTC for peer code reviews and study pods.</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+                <div className="font-bold text-slate-800">Weekends:</div>
+                <p className="text-slate-600">Hosting live classroom workshops and open Q&A sessions.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Add Mastered Skill */}
+        {showSkillModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-extrabold text-base text-slate-900">Add Mastered Skill</h3>
+                <button
+                  onClick={() => setShowSkillModal(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleAddSkill} className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Skill Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={newSkillName}
+                    onChange={(e) => setNewSkillName(e.target.value)}
+                    placeholder="e.g. PyTorch, Kubernetes, Rust, System Design"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Years of Practical Experience</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="40"
+                    value={newSkillExp}
+                    onChange={(e) => setNewSkillExp(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Expertise & What You Can Teach</label>
+                  <textarea
+                    rows={3}
+                    value={newSkillDesc}
+                    onChange={(e) => setNewSkillDesc(e.target.value)}
+                    placeholder="Describe specific frameworks, patterns, or architecture practices you can mentor peers on..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-hidden resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
                   <button
                     type="button"
-                    className="cancel-btn"
-                    onClick={() => {
-                      setShowMasteredSkillForm(false);
-                      setNewMasteredSkill({ name: '', description: '', experienceYears: 1 });
-                      setEditingSkillId(null);
-                    }}
+                    onClick={() => setShowSkillModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-xl font-bold transition shadow-sm"
+                  >
+                    Save Mastered Skill
                   </button>
                 </div>
               </form>
             </div>
-          ) : (
-            <button
-              className="add-mastered-skill-btn"
-              onClick={() => setShowMasteredSkillForm(true)}
-            >
-              <span className="add-icon">+</span> Add a Mastered Skill
-            </button>
-          )}
-        </div>
-
-        <style jsx>{`
-          .mastered-skills-surface {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            margin-bottom: 30px;
-            border-top: 5px solid #6366f1;
-          }
-          
-          .surface-header {
-            margin-bottom: 25px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 15px;
-          }
-          
-          .surface-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0 0 8px 0;
-            color: #1f2937;
-          }
-          
-          .surface-header p {
-            color: #6b7280;
-            margin: 0;
-            font-size: 15px;
-          }
-          
-          .mastered-skills-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-          }
-          
-          .mastered-skill-card {
-            background-color: #f9fafb;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #6366f1;
-            transition: all 0.2s ease;
-          }
-          
-          .mastered-skill-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-          }
-          
-          .mastered-skill-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-          }
-          
-          .skill-name-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-          }
-          
-          .skill-name-badge h3 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-          }
-          
-          .skill-icon {
-            font-size: 20px;
-          }
-          
-          .mastered-skill-description {
-            color: #4b5563;
-            margin: 0 0 15px 0;
-            font-size: 14px;
-            line-height: 1.5;
-          }
-          
-          .mastered-skill-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            border-top: 1px dashed #e5e7eb;
-            padding-top: 15px;
-          }
-          
-          .mastered-skill-experience {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-            color: #6b7280;
-          }
-          
-          .experience-icon {
-            font-size: 16px;
-          }
-          
-          .teach-badge {
-            background-color: #10b981;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-          }
-          
-          .mastered-skill-actions {
-            display: flex;
-            gap: 8px;
-          }
-          
-          .mastered-skill-edit-btn, .mastered-skill-delete-btn {
-            background: none;
-            border: none;
-            padding: 6px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-          
-          .mastered-skill-edit-btn {
-            color: #4b5563;
-          }
-          
-          .mastered-skill-delete-btn {
-            color: #ef4444;
-          }
-          
-          .mastered-skill-edit-btn:hover {
-            background-color: #e5e7eb;
-          }
-          
-          .mastered-skill-delete-btn:hover {
-            background-color: #fee2e2;
-          }
-          
-          .button-icon {
-            font-size: 16px;
-          }
-          
-          .no-mastered-skills {
-            text-align: center;
-            padding: 40px;
-            background-color: #f9fafb;
-            border-radius: 10px;
-            border: 2px dashed #e5e7eb;
-          }
-          
-          .empty-state-icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-          }
-          
-          .empty-state-hint {
-            color: #6b7280;
-            font-style: italic;
-            margin-top: 5px;
-          }
-          
-          .loading-mastered-skills {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-          }
-          
-          .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e5e7eb;
-            border-top: 4px solid #6366f1;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-          }
-          
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          .mastered-skill-form-container {
-            background-color: #f9fafb;
-            border-radius: 10px;
-            padding: 25px;
-            margin-top: 20px;
-            border: 1px solid #e5e7eb;
-          }
-          
-          .form-title {
-            margin: 0 0 20px 0;
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          
-          .mastered-skill-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-          }
-          
-          .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          
-          .form-group label {
-            font-weight: 500;
-            color: #4b5563;
-            font-size: 14px;
-          }
-          
-          .required {
-            color: #ef4444;
-            margin-left: 2px;
-          }
-          
-          .form-group input, .form-group textarea {
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-          }
-          
-          .form-group input:focus, .form-group textarea:focus {
-            border-color: #6366f1;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-          }
-          
-          .number-input-container {
-            display: flex;
-            align-items: center;
-          }
-          
-          .number-control {
-            width: 36px;
-            height: 36px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e5e7eb;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: #4b5563;
-          }
-          
-          .number-control:first-child {
-            border-radius: 6px 0 0 6px;
-          }
-          
-          .number-control:last-child {
-            border-radius: 0 6px 6px 0;
-          }
-          
-          .number-input-container input {
-            width: 60px;
-            text-align: center;
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
-          }
-          
-          .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-          }
-          
-          .submit-btn, .cancel-btn {
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-          }
-          
-          .submit-btn {
-            background-color: #6366f1;
-            color: white;
-          }
-          
-          .cancel-btn {
-            background-color: #e5e7eb;
-            color: #4b5563;
-          }
-          
-          .submit-btn:hover {
-            background-color: #4f46e5;
-          }
-          
-          .cancel-btn:hover {
-            background-color: #d1d5db;
-          }
-          
-          .add-mastered-skill-btn {
-            margin-top: 20px;
-            padding: 12px 20px;
-            background-color: white;
-            color: #6366f1;
-            border: 2px dashed #6366f1;
-            border-radius: 6px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
-          }
-          
-          .add-mastered-skill-btn:hover {
-            background-color: #f5f3ff;
-          }
-          
-          .add-icon {
-            font-size: 18px;
-            font-weight: bold;
-          }
-          
-          @media (max-width: 768px) {
-            .mastered-skills-list {
-              grid-template-columns: 1fr;
-            }
-            
-            .mastered-skill-meta {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 10px;
-            }
-            
-            .teach-badge {
-              align-self: flex-start;
-            }
-          }
-        `}</style>
-      </div>
-
-      {/* Share Skills Section - Now on a different surface */}
-      <div className="share-skills-surface">
-        <div className="surface-header">
-          <h2>Showcase Your Skills</h2>
-          <p>Share your progress and achievements with the community</p>
-        </div>
-
-        <div className="facebook-style-share">
-          <div className="share-skills-input" onClick={() => setShowPostForm(true)}>
-            <img src={profileImage} alt="Profile" className="share-profile-pic" />
-            <div className="share-prompt">
-              What skill did you improve today?
-            </div>
           </div>
+        )}
 
-          <div className="share-skills-actions">
-            <button
-              className="share-action-button photo-button"
-              onClick={() => setShowPostForm(true)}
-            >
-              <span className="share-icon">📷</span> Photo/Video
-            </button>
-            <button
-              className="share-action-button skill-button"
-              onClick={() => setShowPostForm(true)}
-            >
-              <span className="share-icon">🎯</span> Skill Update
-            </button>
-          </div>
-        </div>
+        {/* Modal: Create Post */}
+        {showPostModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-extrabold text-base text-slate-900">Create Skill Post</h3>
+                <button
+                  onClick={() => setShowPostModal(false)}
+                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
 
-        {/* Display Posts */}
-        {posts.length > 0 && (
-          <div className="posts-container home-posts">
-            <h3>Your Skill Updates</h3>
-
-            <div className="posts-list">
-              {posts.map(post => (
-                <div key={post._id} className="post-card">
-                  <div className="post-header">
-                    <img src={profileImage} alt={displayName} className="post-author-pic" />
-                    <div>
-                      <div className="post-author">{displayName}</div>
-                      <div className="post-skill-tag">{post.skillTag}</div>
-                      <div className="post-date">{new Date(post.createdAt).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-
-                  <div className="post-content">{post.content}</div>
-
-                  {post.mediaUrl && (
-                    <div className="post-media">
-                      {post.mediaType === 'image' ? (
-                        <img src={post.mediaUrl} alt="Post media" />
-                      ) : (
-                        <video src={post.mediaUrl} controls />
-                      )}
-                    </div>
-                  )}
-
-                  <div className="post-actions">
-                    <button
-                      className={`like-button ${hasUserLikedPost(post) ? 'liked' : ''}`}
-                      onClick={() => handleLikePost(post._id)}
-                      disabled={isLiking}
-                    >
-                      <span>{hasUserLikedPost(post) ? '❤️' : '👍'}</span>
-                      {post.likes?.length || 0}
-                    </button>
-                    <button
-                      className={`comment-button ${commentsVisible[post._id] ? 'active' : ''}`}
-                      onClick={() => toggleComments(post._id)}
-                    >
-                      <span>💬</span> {post.comments?.length || 0}
-                    </button>
-                  </div>
-
-                  {/* Comments section */}
-                  {commentsVisible[post._id] && (
-                    <div className="comments-section">
-                      <div className="comments-list">
-                        {postsWithComments[post._id] && postsWithComments[post._id].length > 0 ? (
-                          postsWithComments[post._id].map((comment, index) => (
-                            <div key={index} className="comment-item">
-                              <img
-                                src={comment.user?.profileImage || '/images/profile-placeholder.png'}
-                                alt={comment.user?.name || 'User'}
-                                className="comment-user-pic"
-                              />
-                              <div className="comment-content">
-                                <div className="comment-user-name">{comment.user?.name || 'User'}</div>
-                                <div className="comment-text">{comment.content}</div>
-                                <div className="comment-date">
-                                  {new Date(comment.createdAt).toLocaleString()}
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="no-comments">No comments yet. Be the first to comment!</div>
-                        )}
-                      </div>
-
-                      <form className="comment-form" onSubmit={handleAddComment}>
-                        <img src={profileImage} alt={displayName} className="comment-user-pic" />
-                        <input
-                          type="text"
-                          placeholder="Write a comment..."
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          onFocus={() => setActiveCommentPost(post._id)}
-                          className="comment-input"
-                        />
-                        <button
-                          type="submit"
-                          className="comment-submit"
-                          disabled={!commentText.trim() || isCommenting}
-                        >
-                          Post
-                        </button>
-                      </form>
-                    </div>
-                  )}
+              <form onSubmit={handleCreatePost} className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Skill Domain Tag</label>
+                  <select
+                    value={newPostTag}
+                    onChange={(e) => setNewPostTag(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="Full Stack Engineering">Full Stack Engineering</option>
+                    <option value="AI & Machine Learning">AI & Machine Learning</option>
+                    <option value="DevOps & Containers">DevOps & Containers</option>
+                    <option value="UI/UX Engineering">UI/UX Engineering</option>
+                    <option value="System Design">System Design</option>
+                  </select>
                 </div>
-              ))}
+
+                <div>
+                  <label className="font-bold text-slate-700 mb-1 block">Post Content</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    placeholder="Share what you worked on, an architectural pattern, or code breakthrough..."
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden resize-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPostModal(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition shadow-sm"
+                  >
+                    Publish Post
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
       </div>
-
-      {/* Post Form Popup */}
-      {showPostForm && (
-        <div className="post-form-overlay">
-          <div className="post-form-popup">
-            <div className="post-form-header">
-              <h3>Share Your Skills</h3>
-              <button
-                className="close-form-button"
-                onClick={() => setShowPostForm(false)}
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handlePostSubmit} className="post-form">
-              <div className="post-form-user">
-                <img src={profileImage} alt={displayName} className="post-user-pic" />
-                <div className="post-user-name">{displayName}</div>
-              </div>
-
-              <textarea
-                name="content"
-                placeholder="What skill did you improve today?"
-                value={postData.content}
-                onChange={handlePostInputChange}
-                required
-              />
-
-              <div className="skill-input">
-                <input
-                  type="text"
-                  name="skillTag"
-                  placeholder="Enter skill name..."
-                  value={postData.skillTag}
-                  onChange={handlePostInputChange}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && postData.skillTag.trim()) {
-                      e.preventDefault();
-                      setPostData(prev => ({
-                        ...prev,
-                        skillTags: [...(prev.skillTags || []), prev.skillTag.trim()],
-                        skillTag: ''
-                      }));
-                    }
-                  }}
-                />
-
-                {postData.skillTags && postData.skillTags.length > 0 && (
-                  <div className="selected-skills">
-                    {postData.skillTags.map((skill, index) => (
-                      <span key={index} className="skill-tag selected">
-                        {skill}
-                        <button
-                          type="button"
-                          className="remove-skill"
-                          onClick={() => {
-                            setPostData(prev => ({
-                              ...prev,
-                              skillTags: prev.skillTags.filter((_, i) => i !== index)
-                            }));
-                          }}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {user.skills?.length > 0 && (
-                  <div className="skill-suggestions">
-                    <span className="suggestions-label">Your skills:</span>
-                    <div className="skill-tags">
-                      {user.skills
-                        .filter(skill => !postData.skillTags?.includes(skill))
-                        .map((skill, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            className="skill-tag"
-                            onClick={() => {
-                              if (postData.skillTags?.includes(skill)) return;
-                              setPostData(prev => ({
-                                ...prev,
-                                skillTags: [...(prev.skillTags || []), skill],
-                                skillTag: ''
-                              }));
-                            }}
-                          >
-                            {skill}
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="media-upload">
-                <label>
-                  <span className="share-icon">📷</span> Add Photo/Video
-                  <input
-                    type="file"
-                    name="media"
-                    accept="image/*,video/*"
-                    onChange={handlePostInputChange}
-                  />
-                </label>
-
-                {postData.mediaPreview && (
-                  <div className="media-preview">
-                    {postData.mediaType === 'image' ? (
-                      <img src={postData.mediaPreview} alt="Preview" />
-                    ) : (
-                      <video src={postData.mediaPreview} controls />
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <button type="submit" className="post-submit-button">
-                Share
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

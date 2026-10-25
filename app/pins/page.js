@@ -13,6 +13,8 @@ export default function PinsPage() {
   const [newDescription, setNewDescription] = useState('');
   const [newCategory, setNewCategory] = useState('System Design');
   const [imagePreview, setImagePreview] = useState(null);
+  const [toast, setToast] = useState(null);
+  const showToast = (t) => { setToast(t); setTimeout(() => setToast(null), 3000); };
 
   useEffect(() => {
     setPins(clientStore.getPins());
@@ -66,6 +68,7 @@ export default function PinsPage() {
     setNewDescription('');
     setImagePreview(null);
     setShowCreateModal(false);
+    showToast('📌 Blueprint pinned to your board!');
   };
 
   return (
@@ -211,7 +214,7 @@ export default function PinsPage() {
                       {activePinModal.isSaved ? 'Saved to Your Board ✓' : 'Save to Board 📌'}
                     </button>
                     <button
-                      onClick={() => alert('Diagram blueprint copied!')}
+                      onClick={() => showToast('📋 Diagram blueprint link copied!')}
                       className="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold text-slate-700"
                     >
                       Share
