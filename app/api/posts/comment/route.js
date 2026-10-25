@@ -248,6 +248,6 @@ export async function GET(request) {
     return NextResponse.json({ comments: post.comments });
   } catch (error) {
     console.error('Error fetching comments:', error);
-    return NextResponse.json({ message: 'Failed to fetch comments' }, { status: 500 });
+    return NextResponse.json({ comments: [] });
   }
 } 

@@ -29,8 +29,8 @@ export default function FriendsPage() {
             const token = localStorage.getItem('token');
 
             if (!token) {
-                router.push('/login');
-                return;
+                localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+                // continue in demo mode
             }
 
             const res = await fetch('/api/friends', {
@@ -62,8 +62,8 @@ export default function FriendsPage() {
             const token = localStorage.getItem('token');
 
             if (!token) {
-                router.push('/login');
-                return;
+                localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+                // continue in demo mode
             }
 
             const res = await fetch('/api/friends/cancel', {
@@ -102,8 +102,8 @@ export default function FriendsPage() {
             const token = localStorage.getItem('token');
 
             if (!token) {
-                router.push('/login');
-                return;
+                localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+                // continue in demo mode
             }
 
             const response = await fetch('/api/friends/respond', {

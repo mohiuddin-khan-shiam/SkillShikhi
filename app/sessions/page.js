@@ -8,6 +8,7 @@ import Calendar from '../components/Calendar';
 import Link from 'next/link';
 import Image from 'next/image';
 import './sessions.css';
+import { clientStore } from '../../lib/clientStore';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
@@ -43,7 +44,10 @@ export default function SessionsPage() {
         setUserId(storedUserId);
       } else {
         console.error('No userId found in localStorage');
-        setError('Authentication required. Please log in again.');
+        const demoId = 'user_alex_101';
+        localStorage.setItem('userId', demoId);
+        localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+        setUserId(demoId);
         setLoading(false);
       }
     } catch (error) {
@@ -89,7 +93,17 @@ export default function SessionsPage() {
       setSessions(data.sessions || []);
     } catch (error) {
       console.error('Error fetching sessions:', error);
-      setError(error.message || 'Failed to load sessions');
+      setError(null);
+      setSessions(clientStore.getSessions().map(s => ({
+        _id: s.id,
+        skill: s.skill,
+        status: s.status === 'scheduled' ? 'accepted' : s.status,
+        fromUser: { _id: 'user_alex_101', name: 'Alex River', profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
+        toUser: { _id: s.instructor.id, name: s.instructor.name, profileImage: s.instructor.avatar },
+        preferredDate: s.scheduledDate,
+        preferredTime: s.scheduledTime,
+      })));
+      return;
       setSessions([]);
     } finally {
       setLoading(false);

@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import '../../../styles/admin.css';
+import { DEMO_USERS } from '../../../lib/demoData';
 
-// Import components with relative paths
+// Import components with dynamic loading
 const ClientOnly = dynamic(() => import('../../../components/ClientOnly'), { ssr: false });
 const ReportsTab = dynamic(() => import('../../../components/admin/ReportsTab'), { ssr: false });
 const UsersTab = dynamic(() => import('../../../components/admin/UsersTab'), { ssr: false });
@@ -13,247 +15,122 @@ const ContentTab = dynamic(() => import('../../../components/admin/ContentTab'),
 const SessionsTab = dynamic(() => import('../../../components/admin/SessionsTab'), { ssr: false });
 const LogsTab = dynamic(() => import('../../../components/admin/LogsTab'), { ssr: false });
 const AnalyticsTab = dynamic(() => import('../../../components/admin/AnalyticsTab'), { ssr: false });
-const AdminDashboardTracker = dynamic(() => import('../../../components/admin/AdminDashboardTracker'), { ssr: false });
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('reports');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  
-  // Check if user is admin
+  const [activeTab, setActiveTab] = useState('analytics');
+  const [isAdmin, setIsAdmin] = useState(true);
+  const [loading, setLoading] = useState(false);
+
+  // Auto-authenticate for recruiter showcase
   useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        // Only use adminToken, not regular token for admin routes
-        const token = localStorage.getItem('adminToken');
-        
-        if (!token) {
-          router.push('/admin-login');
-          return;
-        }
-        
-        console.log('Checking admin status with token:', token);
-        const response = await fetch('/api/admin/login', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          cache: 'no-store'
-        });
-        
-        const data = await response.json();
-        console.log('Admin check response:', data);
-        
-        if (response.ok) {
-          console.log('Admin authentication successful');
-          setIsAdmin(true);
-        } else {
-          router.push('/admin-login');
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        router.push('/admin-login');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkAdmin();
-  }, [router]);
-  
-  // Handle logout
+    let token = localStorage.getItem('adminToken');
+    if (!token) {
+      token = 'demo_admin_jwt_token_recruiter_preview';
+      localStorage.setItem('adminToken', token);
+      localStorage.setItem('isAdmin', 'true');
+      localStorage.setItem('adminId', DEMO_USERS.admin.id);
+    }
+    setIsAdmin(true);
+    setLoading(false);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('adminId');
     router.push('/admin-login');
   };
-  
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="admin-loading">
-        <div className="admin-loading-content">
-          <div className="admin-loading-spinner"></div>
-          <p>Loading admin dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Show unauthorized message if not admin
-  if (!isAdmin) {
-    return (
-      <div className="admin-error">
-        <div className="admin-error-content">
-          <h2>Unauthorized Access</h2>
-          <p>You do not have permission to access the admin dashboard.</p>
-          <button onClick={() => router.push('/admin-login')} className="admin-button primary-button">
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  // Main dashboard render
+
   return (
     <div className="admin-dashboard">
-      <ClientOnly>
-        <AdminDashboardTracker />
-      </ClientOnly>
-      <div className="admin-header">
-        <h1 className="admin-title">SkillShikhi Admin</h1>
-        <button onClick={handleLogout} className="admin-button secondary-button">Logout</button>
-      </div>
-      
-      <div className="admin-layout">
-        <nav className="admin-nav">
-          <ul className="admin-nav-list">
-            <li className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('reports');
-              }}>
-                <span className="nav-icon">📊</span>
-                Reports
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('users');
-              }}>
-                <span className="nav-icon">👥</span>
-                User Management
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'content' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('content');
-              }}>
-                <span className="nav-icon">📝</span>
-                Content Moderation
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'sessions' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('sessions');
-              }}>
-                <span className="nav-icon">🔄</span>
-                Active Sessions
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'logs' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('logs');
-              }}>
-                <span className="nav-icon">📋</span>
-                Activity Logs
-              </a>
-            </li>
-            <li className={`admin-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}>
-              <a href="#" className="admin-nav-link" onClick={(e) => {
-                e.preventDefault();
-                setActiveTab('analytics');
-              }}>
-                <span className="nav-icon">📈</span>
-                Analytics
-              </a>
-            </li>
-          </ul>
-        </nav>
-        
-        <div className="admin-content">
-          {/* Reports Tab */}
-          {activeTab === 'reports' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Reports Management</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <ReportsTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-          
-          {/* Users Tab - Combined with Banned Users */}
-          {activeTab === 'users' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">User Management</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <UsersTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-          
-          {/* Content Tab */}
-          {activeTab === 'content' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Content Moderation</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <ContentTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-      
-          {/* Sessions Tab */}
-          {activeTab === 'sessions' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Active Sessions</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <SessionsTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-          
-          {/* Activity Logs Tab */}
-          {activeTab === 'logs' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Activity Logs</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <LogsTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
-          
-          {/* Analytics Tab */}
-          {activeTab === 'analytics' && (
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <h2 className="admin-card-title">Analytics & Reporting</h2>
-              </div>
-              <div className="admin-card-body">
-                <ClientOnly>
-                  <AnalyticsTab />
-                </ClientOnly>
-              </div>
-            </div>
-          )}
+      {/* Showcase Mode Header Banner */}
+      <div className="bg-indigo-900 text-indigo-100 text-xs px-4 py-2 flex items-center justify-between border-b border-indigo-800">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>
+            <strong>Recruiter & Reviewer Showcase Mode:</strong> Full administrative privileges, user moderation, and system analytics unlocked.
+          </span>
         </div>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-white hover:underline">
+            ← Home
+          </Link>
+          <Link href="/feed" className="text-white hover:underline">
+            Social Feed
+          </Link>
+        </div>
+      </div>
+
+      <header className="admin-header">
+        <div className="admin-header-content">
+          <div className="admin-logo-area">
+            <Link href="/">
+              <img src="/logo.png" alt="SkillShikhi Logo" className="admin-logo" />
+            </Link>
+            <div className="admin-title-badge">
+              <span className="admin-title">SkillShikhi Admin</span>
+              <span className="admin-badge">Platform Lead</span>
+            </div>
+          </div>
+          <div className="admin-user-info">
+            <span className="admin-welcome">Welcome, Shiam (Recruiter Demo)</span>
+            <button onClick={handleLogout} className="admin-logout-btn">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="admin-container">
+        <nav className="admin-nav">
+          <button
+            className={`admin-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+          >
+            📊 Analytics & Growth
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            👥 User Management
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'content' ? 'active' : ''}`}
+            onClick={() => setActiveTab('content')}
+          >
+            🛡️ Content Moderation
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            🚩 Reports & Flags
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'sessions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('sessions')}
+          >
+            💻 Active Sessions
+          </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'logs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('logs')}
+          >
+            📜 System Audit Logs
+          </button>
+        </nav>
+
+        <main className="admin-content">
+          <ClientOnly>
+            {activeTab === 'analytics' && <AnalyticsTab />}
+            {activeTab === 'users' && <UsersTab />}
+            {activeTab === 'content' && <ContentTab />}
+            {activeTab === 'reports' && <ReportsTab />}
+            {activeTab === 'sessions' && <SessionsTab />}
+            {activeTab === 'logs' && <LogsTab />}
+          </ClientOnly>
+        </main>
       </div>
     </div>
   );

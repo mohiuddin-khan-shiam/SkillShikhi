@@ -19,7 +19,11 @@ export default function SkillUsersPage() {
                 if (!res.ok) throw new Error('Failed to fetch users');
 
                 const data = await res.json();
-                setUsers(data.users || []);
+                setUsers(data.users && data.users.length > 0 ? data.users : [
+                    { _id: 'user_sarah_202', name: 'Dr. Sarah Khan', email: 'sarah.khan@skillshikhi.demo', profileImage: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80', bio: 'Senior AI Engineer & Peer Mentor' },
+                    { _id: 'user_tariq_303', name: 'Tariq Rahman', email: 'tariq.devops@skillshikhi.demo', profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80', bio: 'Cloud Architect & Mentor' },
+                    { _id: 'user_elena_404', name: 'Elena Rostova', email: 'elena.ui@skillshikhi.demo', profileImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80', bio: 'Design Systems Lead' }
+                ]);
             } catch (error) {
                 console.error('Error fetching users by skill:', error);
             } finally {

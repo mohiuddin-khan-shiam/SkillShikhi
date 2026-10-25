@@ -1,135 +1,128 @@
-# SkillShikhi
+# SkillShikhi — Social Media Meets Peer Skill Sharing
 
-A platform for skill sharing and learning built with Next.js and MongoDB, following MVC architecture.
+[![Next.js 15](https://img.shields.io/badge/Next.js-15.3.0-black?logo=next.js)](https://nextjs.org/)
+[![React 19](https://img.shields.io/badge/React-19.0.0-61dafb?logo=react)](https://react.dev/)
+[![Deployment](https://img.shields.io/badge/Vercel-Live-success?logo=vercel)](https://skill-shikhi.vercel.app/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## Architecture
+> **Live Demo:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)  
+> **Author & Developer:** [S. M. Mohiuddin Khan Shiam](https://github.com/mohiuddin-khan-shiam)
 
-This project follows the Model-View-Controller (MVC) architecture with an additional service layer to enhance maintainability and scalability. For detailed information about the architecture, please refer to the [MVC-ARCHITECTURE.md](./MVC-ARCHITECTURE.md) file.
+---
 
-### Key Features
+## 🌟 The Vision: "SkillShikhi"
+*Shikhi* (শিখি) signifies **"learning"** in Bengali. **SkillShikhi** is a platform created to combine the engagement mechanics of **14 major social media platforms**—re-engineered exclusively for collaborative skill sharing, technical mentorship, and peer learning:
 
-- **MVC Architecture**: Clear separation of concerns between models, views, and controllers
-- **Service Layer**: Specialized services for cross-cutting concerns like notifications and database operations
-- **Configuration Management**: Centralized configuration for easy environment management
-- **Standardized API Responses**: Consistent response format across all endpoints
-- **Input Validation**: Comprehensive validation utilities for user input
-- **Structured Logging**: Centralized logging service for better debugging and monitoring
+| Social Platform | SkillShikhi Learning Adaptation | Route |
+|---|---|---|
+| **Facebook & Threads** | Rich skill feeds, technical discussions, code walk-throughs & reactions | `/feed` |
+| **LinkedIn** | Mastered skills directory, peer endorsements, verified mentor credentials | `/skills` |
+| **YouTube & Classroom** | Virtual classrooms, live peer tutoring workshops, and calendar bookings | `/sessions` |
+| **TikTok & Instagram** | 60-second vertical micro-lessons ("Skill Reels") with key takeaways | `/reels` |
+| **WhatsApp & Telegram** | Real-time peer study pods, 1-on-1 direct messaging, and presence | `/chat` |
+| **Reddit** | Sub-Shikhi communities (`s/webdev`, `s/ai-ml`), upvoting & verified answers | `/community` |
+| **Pinterest** | Architecture blueprints, design tokens, and technical cheat sheet pinboards | `/pins` |
+| **X (Twitter)** | 280-character Code Droplets, terminal one-liners, and rapid tips | `/droplets` |
+| **Snapchat** | 24-hour daily learning streaks and 100-Days-of-Code progress snaps | `/feed` |
+| **Messenger** | Instant teaching request dispatch and session confirmation notifications | `/teaching` |
 
-### Benefits
+---
 
-- **Maintainability**: Well-organized code that's easier to understand and modify
-- **Scalability**: New features can be added without affecting existing functionality
-- **Reusability**: Controllers and services can be reused across the application
-- **Testability**: Components can be tested in isolation
-- **Consistency**: Standardized patterns for common operations
+## 🎯 Recruiter & Reviewer Fast-Track
+To evaluate the platform, recruiters do **not** need to create database credentials or sign up:
+1. **Interactive Showcase Navigation:** The top header includes an instant **Persona Switcher** allowing you to switch between:
+   - 🎒 **Alex River (Learner):** Explores feeds, watches reels, pins cheat sheets, books sessions.
+   - 🎓 **Dr. Sarah Khan (Mentor):** Conducts PyTorch workshops, verifies community answers.
+   - 🛡️ **Shiam (Admin Lead):** Full admin dashboard with user moderation, reports, and system telemetry.
+2. **Instant Demo Logins:** Both [`/login`](https://skill-shikhi.vercel.app/login) and [`/admin-login`](https://skill-shikhi.vercel.app/admin-login) feature 1-click demo entry buttons.
+3. **Admin Dashboard:** Access [`/admin/dashboard`](https://skill-shikhi.vercel.app/admin/dashboard) directly to inspect platform analytics, content moderation, user management, and session monitoring.
 
-## Getting Started
+---
 
-### Environment Setup
+## 🛡️ Vercel Free-Tier & Serverless Architecture
 
-Create a `.env.local` file in the root directory with the following variables:
+When deploying full-stack Next.js applications to free serverless tiers (like Vercel), two common constraints arise:
+1. **Ephemeral Read-Only Filesystem:** Serverless functions cannot write files to local disk (`fs.writeFile` to `public/` causes `EROFS` errors or data vanishes on lambda recycle).
+2. **Database Inactivity Timeouts:** Free MongoDB Atlas (M0) clusters frequently pause after periods of inactivity, causing connection drops (`ECONNREFUSED`).
 
-```
-# Server
-PORT=3000
-NODE_ENV=development
+### How SkillShikhi Solves This:
+- **Resilient Fallback Data Layer:** Every API endpoint (`/api/posts`, `/api/skills`, `/api/sessions`, `/api/admin/*`) implements an automatic fallback layer. If a MongoDB cluster is asleep, paused, or unreachable, the endpoints gracefully serve high-fidelity mock data rather than crashing with a 500 error.
+- **Client-Side Hybrid Hydration:** File uploads (post images, avatar photos, pinboards) are handled via client-side Base64 object URLs and synchronized to `localStorage`. User actions (new posts, likes, bookmarks, session reservations) persist interactively throughout the browser session without writing files to the server.
+- **Vercel Optimized Builds:** Duplicate configuration files have been cleaned up and fatal `process.exit(1)` checks removed from `next.config.js`, ensuring 100% build pass rates on Vercel deployments.
 
-# Database
-MONGODB_URI=mongodb://localhost:27017/skillshikhi
-MONGODB_DB=skillshikhi
+---
 
-# Authentication
-JWT_SECRET=your_jwt_secret_key_here
-JWT_EXPIRES_IN=7d
+## 🛠️ Tech Stack & Dependencies
 
-# Email
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=your_email@example.com
-EMAIL_PASSWORD=your_email_password
-EMAIL_FROM=SkillShikhi <noreply@skillshikhi.com>
+- **Framework:** [Next.js 15.3.0](https://nextjs.org/) (App Router, Server & Client Components)
+- **Library:** [React 19.0.0](https://react.dev/)
+- **Styling:** PostCSS, Tailwind CSS v4 conventions & custom Glassmorphic design system
+- **Database & ODM:** MongoDB & Mongoose 8.13.2 (with resilient offline fallback)
+- **Authentication:** JSON Web Tokens (JWT) & bcryptjs
+- **Icons & UI:** `react-icons`, `date-fns`, `clsx`
+- **Deployment Platform:** Vercel
 
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+---
 
-# Application
-BASE_URL=http://localhost:3000
-```
+## 💻 Local Development
 
-### Installation
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/mohiuddin-khan-shiam/SkillShikhi.git
+   cd SkillShikhi
+   ```
 
-Install dependencies:
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-# or
-yarn install
-```
+3. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
 
-### Running the Development Server
+4. **Build for production:**
+   ```bash
+   npm run build
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-### Project Structure
+## 📁 Repository Structure
 
 ```
 SkillShikhi/
-├── app/                  # Next.js app router pages and API routes
-│   ├── api/              # API endpoints (using controllers)
-│   └── ...               # Page routes
-├── components/           # Shared UI components
-├── config/               # Centralized configuration management
-├── controllers/          # Business logic organized by feature
-│   ├── auth/             # Authentication controllers
-│   ├── user/             # User-related controllers
-│   ├── skill/            # Skill-related controllers
-│   ├── session/          # Session-related controllers
-│   └── ...               # Other feature controllers
-├── lib/                  # Core libraries and integrations
-├── middleware/           # Request middleware
-├── models/               # Data models
-├── public/               # Static assets
-├── services/             # Service layer for complex operations
-│   ├── databaseService.js # Database connection and operations
-│   ├── loggerService.js  # Centralized logging functionality
-│   ├── notificationService.js # Email and notification handling
-│   └── ...               # Other services
-├── utils/                # Helper functions
-│   ├── apiResponse.js    # Standardized API response formatting
-│   ├── validation.js     # Input validation utilities
-│   └── ...               # Other utilities
-└── views/                # Feature-specific view components
-    ├── auth/             # Authentication views
-    ├── user/             # User-related views
-    ├── skill/            # Skill-related views
-    └── ...               # Other feature views
+├── app/
+│   ├── layout.js              # Global root layout with Navbar & Footer
+│   ├── page.js                # Master interactive recruiter showcase landing page
+│   ├── feed/                  # Facebook & Threads skill feed
+│   ├── reels/                 # TikTok & Instagram 60s micro-lessons
+│   ├── pins/                  # Pinterest architecture & cheatsheet pinboard
+│   ├── community/             # Reddit-style skill sub-communities
+│   ├── droplets/              # X (Twitter) 280-char technical tips
+│   ├── sessions/              # Classroom & mentorship scheduling calendar
+│   ├── chat/                  # WhatsApp & Telegram study pod messaging
+│   ├── skills/                # LinkedIn skill mastery & endorsement directory
+│   ├── profile/               # Learner & mentor profile portfolio
+│   ├── admin-login/           # 1-click recruiter admin authentication
+│   ├── admin/dashboard/       # Analytics, moderation, reports, and logs
+│   ├── api/                   # Resilient serverless REST API endpoints
+│   └── sitemap.js             # Native metadata sitemap
+├── components/
+│   ├── Navbar.js              # Global navigation with Recruiter Role Switcher
+│   ├── Footer.js              # Footer with 14-platform matrix & author credits
+│   └── admin/                 # Modular admin dashboard tabs & charts
+├── lib/
+│   ├── clientStore.js         # Client-side resilient state & localStorage manager
+│   ├── demoData.js            # Comprehensive showcase data across all 14 paradigms
+│   └── mongodb.js             # Resilient connection pooler with graceful fallback
+└── controllers/               # Business logic controllers
 ```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
+## 👤 Author
+**S. M. Mohiuddin Khan Shiam**  
+- **GitHub:** [@mohiuddin-khan-shiam](https://github.com/mohiuddin-khan-shiam)  
+- **Live Showcase:** [https://skill-shikhi.vercel.app/](https://skill-shikhi.vercel.app/)

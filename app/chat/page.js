@@ -15,8 +15,9 @@ export default function ChatPage() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
-                    router.push('/login');
-                    return;
+                    localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+                    token = 'demo_jwt_token_recruiter_preview';
+                    // continue in demo preview mode
                 }
 
                 const res = await fetch('/api/chat', {

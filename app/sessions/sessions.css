@@ -1,7 +1,7 @@
 /* sessions.css - Enhanced version */
 
 /* Fix for oversized icons */
-svg {
+.sessions-container svg, .session-card svg {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
@@ -23,14 +23,14 @@ svg {
   background-color: #f3f4f6;
 }
 
-.back-link svg {
+.back-link .sessions-container svg, .session-card svg {
   width: 16px;
   height: 16px;
   margin-right: 0.5rem;
 }
 
 /* Empty state calendar icon */
-.empty-state-icon svg {
+.empty-state-icon .sessions-container svg, .session-card svg {
   width: 40px;
   height: 40px;
   color: #9ca3af;
@@ -44,7 +44,7 @@ svg {
   margin-right: 0.5rem;
 }
 
-.skill-icon svg {
+.skill-icon .sessions-container svg, .session-card svg {
   width: 16px;
   height: 16px;
   color: #3b82f6;
@@ -57,7 +57,7 @@ svg {
   justify-content: center;
 }
 
-.date-icon svg {
+.date-icon .sessions-container svg, .session-card svg {
   width: 16px;
   height: 16px;
   color: #6b7280;
@@ -70,14 +70,14 @@ svg {
   justify-content: center;
 }
 
-.info-icon svg {
+.info-icon .sessions-container svg, .session-card svg {
   width: 16px;
   height: 16px;
   color: #6b7280;
 }
 
 /* Action button icons */
-.action-btn svg {
+.action-btn .sessions-container svg, .session-card svg {
   width: 16px;
   height: 16px;
   margin-right: 6px;

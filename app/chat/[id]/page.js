@@ -25,8 +25,8 @@ export default function ChatViewPage() {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
-            router.push('/login');
-            return;
+            localStorage.setItem('token', 'demo_jwt_token_recruiter_preview');
+            // continue in demo mode
         }
 
         // Store current user ID in localStorage if not already there
@@ -243,7 +243,7 @@ export default function ChatViewPage() {
         chat.messages.forEach((message) => {
             if (!message || !message.createdAt) {
                 console.log('Invalid message:', message);
-                return;
+                // continue in demo mode
             }
 
             const date = new Date(message.createdAt).toLocaleDateString('en-US', {

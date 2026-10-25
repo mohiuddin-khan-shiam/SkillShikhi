@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import '../styles.css';
 import NotificationsPanel from '../components/NotificationsPanel';
+import { DEMO_USERS } from '../../lib/demoData';
+import { clientStore } from '../../lib/clientStore';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -65,7 +67,11 @@ export default function ProfilePage() {
         }
       } else {
         console.error('Failed to fetch profile:', await res.text());
-        router.push('/login'); // redirect to login if unauthorized
+        const fallbackUser = clientStore.getCurrentUser() || DEMO_USERS.alex;
+        setUser(fallbackUser);
+        if (fallbackUser?.masteredSkills) {
+          setMasteredSkills(fallbackUser.masteredSkills);
+        }
       }
     }
 
@@ -151,14 +157,14 @@ export default function ProfilePage() {
 
   // Fetch user posts
   const fetchPosts = async () => {
-    if (!user?._id) return;
+    const targetId = user?._id || user?.id || DEMO_USERS.alex.id;
 
     setPostsLoading(true);
     try {
       const token = localStorage.getItem('token');
       console.log('Fetching posts for user:', user._id);
 
-      const response = await fetch(`/api/posts/user/${user._id}`, {
+      const response = await fetch(`/api/posts/user/${targetId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -167,7 +173,7 @@ export default function ProfilePage() {
       if (response.ok) {
         const data = await response.json();
         console.log('Posts received:', data.posts?.length || 0);
-        setPosts(data.posts || []);
+        setPosts(data.posts && data.posts.length > 0 ? data.posts : clientStore.getPosts());
       } else {
         const errorText = await response.text();
         console.error('Failed to fetch posts:', errorText);
